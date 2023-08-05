@@ -1,0 +1,3 @@
+[submodule "Blender/Add-ons/BlenderNeRF"]
+	path = Blender/Add-ons/BlenderNeRF
+	url = https://github.com/kobejean/BlenderNeRF.git
