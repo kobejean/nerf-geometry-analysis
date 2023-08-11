@@ -5,11 +5,11 @@ from . import helper, blender_nerf_operator
 
 
 # global addon script variables
-EMPTY_NAME = 'BlenderNeRF Sphere'
-CAMERA_NAME = 'BlenderNeRF Camera'
+EMPTY_NAME = 'NeRFDataset Sphere'
+CAMERA_NAME = 'NeRFDataset Camera'
 
 # camera on sphere operator class
-class CameraOnSphere(blender_nerf_operator.BlenderNeRF_Operator):
+class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
     '''Camera on Sphere Operator'''
     bl_idname = 'object.camera_on_sphere'
     bl_label = 'Camera on Sphere COS'
@@ -82,6 +82,7 @@ class CameraOnSphere(blender_nerf_operator.BlenderNeRF_Operator):
             # training transforms
             sphere_output_data['frames'] = self.get_camera_extrinsics(scene, sphere_camera, mode='TRAIN', method='COS')
             self.save_json(output_path, 'transforms_train.json', sphere_output_data)
+            self.save_json(output_path, 'transforms.json', sphere_output_data)
 
             # rendering
             if scene.render_frames:

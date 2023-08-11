@@ -9,11 +9,11 @@ import bpy
 OUTPUT_TRAIN = 'train'
 OUTPUT_VAL = 'val'
 OUTPUT_TEST = 'test'
-CAMERA_NAME = 'BlenderNeRF Camera'
+CAMERA_NAME = 'NeRFDataset Camera'
 
 
 # blender nerf operator parent class
-class BlenderNeRF_Operator(bpy.types.Operator):
+class NeRFDataset_Operator(bpy.types.Operator):
 
     # camera intrinsics
     def get_camera_intrinsics(self, scene, camera):
@@ -144,13 +144,13 @@ class BlenderNeRF_Operator(bpy.types.Operator):
         if method == 'COS' and CAMERA_NAME in scene.objects.keys():
             sphere_camera = scene.objects[CAMERA_NAME]
             if not sphere_camera.data.type == 'PERSP':
-                error_messages.append('BlenderNeRF Camera must remain a perspective camera!')
+                error_messages.append('NeRFDataset Camera must remain a perspective camera!')
 
         if (method == 'SOF' and sof_name == '') or (method == 'TTC' and ttc_name == '') or (method == 'COS' and cos_name == ''):
             error_messages.append('Dataset name cannot be empty!')
 
         if method == 'COS' and any(x == 0 for x in scene.sphere_scale):
-            error_messages.append('The BlenderNeRF Sphere cannot be flat! Change its scale to be non zero in all axes.')
+            error_messages.append('The NeRFDataset Sphere cannot be flat! Change its scale to be non zero in all axes.')
 
         if not self.is_power_of_two(scene.aabb):
             error_messages.append('AABB scale needs to be a power of two!')
@@ -165,7 +165,7 @@ class BlenderNeRF_Operator(bpy.types.Operator):
         now = datetime.datetime.now()
 
         logdata = {
-            'BlenderNeRF Version': scene.blendernerf_version,
+            'NeRFDataset Version': scene.nerfdataset_version,
             'Date and Time' : now.strftime("%d/%m/%Y %H:%M:%S"),
             'Train': scene.train_data,
             'Val': scene.val_data,

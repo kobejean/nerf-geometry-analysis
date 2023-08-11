@@ -4,13 +4,13 @@ from . import helper, blender_nerf_ui, cos_ui, cos_operator
 
 # blender info
 bl_info = {
-    'name': 'BlenderNeRF',
-    'description': 'Easy NeRF synthetic dataset creation within Blender',
-    'author': 'Maxime Raafat',
-    'version': (5, 0, 0),
+    'name': 'NeRFDataset',
+    'description': 'Generate NeRF Datasets from blender',
+    'author': 'Jean Atsumi Flaherty',
+    'version': (1, 0, 0),
     'blender': (3, 0, 0),
-    'location': '3D View > N panel > BlenderNeRF',
-    'doc_url': 'https://github.com/maximeraafat/BlenderNeRF',
+    'location': '3D View > N panel > NeRFDataset',
+    'doc_url': 'https://github.com/kobejean/nerf-geometry-analysis',
     'category': 'Object',
 }
 
@@ -27,7 +27,7 @@ PROPS = [
     ('test_data', bpy.props.BoolProperty(name='Test', description='Construct the testing data', default=True) ),
     ('aabb', bpy.props.IntProperty(name='AABB', description='AABB scale as defined in Instant NGP', default=4, soft_min=1, soft_max=128) ),
     ('render_frames', bpy.props.BoolProperty(name='Render Frames', description='Whether training frames should be rendered. If not selected, only the transforms.json files will be generated', default=True) ),
-    ('logs', bpy.props.BoolProperty(name='Save Log File', description='Whether to create a log file containing information on the BlenderNeRF run', default=False) ),
+    ('logs', bpy.props.BoolProperty(name='Save Log File', description='Whether to create a log file containing information on the NeRFDataset run', default=False) ),
     ('nerf', bpy.props.BoolProperty(name='NeRF', description='Whether to export the camera transforms.json files in the defaut NeRF file format convention', default=False) ),
     ('save_path', bpy.props.StringProperty(name='Save Path', description='Path to the output directory in which the synthetic dataset will be stored', subtype='DIR_PATH') ),
 
@@ -35,7 +35,7 @@ PROPS = [
     ('init_frame_step', bpy.props.IntProperty(name='Initial Frame Step') ),
     ('init_output_path', bpy.props.StringProperty(name='Initial Output Path', subtype='DIR_PATH') ),
     ('rendering', bpy.props.BoolVectorProperty(name='Rendering', description='Whether one of the SOF, TTC or COS methods is rendering', default=(False, False, False), size=3) ),
-    ('blendernerf_version', bpy.props.StringProperty(name='BlenderNeRF Version', default=VERSION) ),
+    ('nerfdataset_version', bpy.props.StringProperty(name='NeRFDataset Version', default=VERSION) ),
 
     # cos controllable properties
     ('cos_dataset_name', bpy.props.StringProperty(name='Name', description='Name of the COS dataset : the data will be stored under <save path>/<name>', default='dataset') ),
@@ -63,7 +63,7 @@ PROPS = [
 
 # classes to register / unregister
 CLASSES = [
-    blender_nerf_ui.BlenderNeRF_UI,
+    blender_nerf_ui.NeRFDataset_UI,
     cos_ui.COS_UI,
     cos_operator.CameraOnSphere
 ]

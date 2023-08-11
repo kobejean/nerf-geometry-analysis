@@ -8,8 +8,8 @@ from bpy.app.handlers import persistent
 
 
 # global addon script variables
-EMPTY_NAME = 'BlenderNeRF Sphere'
-CAMERA_NAME = 'BlenderNeRF Camera'
+EMPTY_NAME = 'NeRFDataset Sphere'
+CAMERA_NAME = 'NeRFDataset Camera'
 
 ## property poll and update functions
 

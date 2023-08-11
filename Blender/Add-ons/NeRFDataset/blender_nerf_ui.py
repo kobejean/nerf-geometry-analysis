@@ -2,13 +2,13 @@ import bpy
 
 
 # blender nerf shared ui properties class
-class BlenderNeRF_UI(bpy.types.Panel):
-    '''BlenderNeRF UI'''
+class NeRFDataset_UI(bpy.types.Panel):
+    '''NeRFDataset UI'''
     bl_idname = 'VIEW3D_PT_blender_nerf_ui'
-    bl_label = 'BlenderNeRF shared UI'
+    bl_label = 'NeRFDataset shared UI'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'BlenderNeRF'
+    bl_category = 'NeRFDataset'
 
     def draw(self, context):
         layout = self.layout
