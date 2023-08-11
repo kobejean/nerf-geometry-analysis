@@ -129,25 +129,17 @@ class NeRFDataset_Operator(bpy.types.Operator):
         train_camera = scene.camera_train_target
         test_camera = scene.camera_test_target
 
-        sof_name = scene.sof_dataset_name
-        ttc_name = scene.ttc_dataset_name
         cos_name = scene.cos_dataset_name
 
         error_messages = []
 
-        if (method == 'SOF' or method == 'COS') and not camera.data.type == 'PERSP':
+        if (method == 'COS') and not camera.data.type == 'PERSP':
             error_messages.append('Only perspective cameras are supported!')
-
-        if method == 'TTC' and not (train_camera.data.type == 'PERSP' and test_camera.data.type == 'PERSP'):
-           error_messages.append('Only perspective cameras are supported!')
 
         if method == 'COS' and CAMERA_NAME in scene.objects.keys():
             sphere_camera = scene.objects[CAMERA_NAME]
             if not sphere_camera.data.type == 'PERSP':
                 error_messages.append('NeRFDataset Camera must remain a perspective camera!')
-
-        if (method == 'SOF' and sof_name == '') or (method == 'TTC' and ttc_name == '') or (method == 'COS' and cos_name == ''):
-            error_messages.append('Dataset name cannot be empty!')
 
         if method == 'COS' and any(x == 0 for x in scene.sphere_scale):
             error_messages.append('The NeRFDataset Sphere cannot be flat! Change its scale to be non zero in all axes.')
@@ -177,29 +169,18 @@ class NeRFDataset_Operator(bpy.types.Operator):
             'Method': method
         }
 
-        if method == 'SOF':
-            logdata['Frame Step'] = scene.train_frame_steps
-            logdata['Camera'] = scene.camera.name
-            logdata['Dataset Name'] = scene.sof_dataset_name
 
-        elif method == 'TTC':
-            logdata['Train Camera Name'] = scene.camera_train_target.name
-            logdata['Test Camera Name'] = scene.camera_test_target.name
-            logdata['Frames'] = scene.ttc_nb_frames
-            logdata['Dataset Name'] = scene.ttc_dataset_name
-
-        else:
-            logdata['Camera'] = scene.camera.name
-            logdata['Location'] = str(list(scene.sphere_location))
-            logdata['Rotation'] = str(list(scene.sphere_rotation))
-            logdata['Scale'] = str(list(scene.sphere_scale))
-            logdata['Radius'] = scene.sphere_radius
-            logdata['Lens'] = str(scene.focal) + ' mm'
-            logdata['Seed'] = scene.seed
-            logdata['Train Frames'] = scene.cos_nb_train_frames
-            logdata['Test Frames'] = scene.cos_nb_test_frames
-            logdata['Upper Views'] = scene.upper_views
-            logdata['Outwards'] = scene.outwards
-            logdata['Dataset Name'] = scene.cos_dataset_name
+        logdata['Camera'] = scene.camera.name
+        logdata['Location'] = str(list(scene.sphere_location))
+        logdata['Rotation'] = str(list(scene.sphere_rotation))
+        logdata['Scale'] = str(list(scene.sphere_scale))
+        logdata['Radius'] = scene.sphere_radius
+        logdata['Lens'] = str(scene.focal) + ' mm'
+        logdata['Seed'] = scene.seed
+        logdata['Train Frames'] = scene.cos_nb_train_frames
+        logdata['Test Frames'] = scene.cos_nb_test_frames
+        logdata['Upper Views'] = scene.upper_views
+        logdata['Outwards'] = scene.outwards
+        logdata['Dataset Name'] = scene.cos_dataset_name
 
         self.save_json(directory, filename='log.txt', data=logdata)

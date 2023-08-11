@@ -50,7 +50,9 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
         scene.frame_current = 0
     
         if scene.test_data:
+            if not scene.show_camera: scene.show_camera = True
             scene.frame_end = scene.frame_start + scene.cos_nb_test_frames - 1
+
             # test camera on sphere
             sphere_camera = scene.objects.get(CAMERA_NAME, camera)
             sphere_output_data = self.get_camera_intrinsics(scene, sphere_camera)
@@ -64,7 +66,7 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
             if scene.render_frames:
                 output_test = os.path.join(output_path, 'test')
                 os.makedirs(output_test, exist_ok=True)
-                scene.rendering = (False, False, True)
+                scene.rendering = True
                 scene.render.filepath = os.path.join(output_test, '') # training frames path
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
@@ -88,14 +90,14 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
             if scene.render_frames:
                 output_train = os.path.join(output_path, 'train')
                 os.makedirs(output_train, exist_ok=True)
-                scene.rendering = (False, False, True)
+                scene.rendering = True
                 scene.render.filepath = os.path.join(output_train, '') # training frames path
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1
 
         # if frames are rendered, the below code is executed by the handler function
-        if not any(scene.rendering):
+        if not scene.rendering:
             # reset camera settings
             if not scene.init_camera_exists: helper.delete_camera(scene, CAMERA_NAME)
             if not scene.init_sphere_exists:
