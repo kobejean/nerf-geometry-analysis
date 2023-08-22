@@ -1,3 +1,0 @@
-[submodule "Blender/Add-ons/NeRFDataset"]
-	path = Blender/Add-ons/NeRFDataset
-	url = https://github.com/kobejean/NeRFDataset.git
