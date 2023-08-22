@@ -13,3 +13,23 @@ The blender project file is located at: `<repo-root>/Blender/checkerboard.blend`
 ## How to use 
 
 The add-on properties panel is available under `3D View > N panel > NeRFDataset` (the **N panel** is accessible under the 3D viewport when pressing `N`).
+
+## Addon Development Workflow
+
+- Find the location where Blender stores add-ons. It's usually something like:
+On Windows: `%USERPROFILE%\AppData\Roaming\Blender Foundation\Blender\<version>\scripts\addons`
+On macOS: `/Applications/Blender.app/Contents/Resources/3.5/scripts/addons/NeRFDataset`
+On Linux: `~/.config/blender/<version>/scripts/addons`
+- Create a symbolic link to your development directory in this location. The exact command will vary by operating system:
+On Windows: mklink /D Link Target
+On macOS/Linux: ln -s Target Link
+
+linux:
+```
+ln -s ~/Code/nerf-geometry-analysis/Blender/Add-ons/NeRFDataset ~/.config/blender/3.0/scripts/addons/NeRFDataset
+```
+
+macOS:
+```
+ln -s ~/Developer/GitHub/nerf-geometry-analysis/Blender/Add-ons/NeRFDataset /Applications/Blender.app/Contents/Resources/3.5/scripts/addons/NeRFDataset
+```
