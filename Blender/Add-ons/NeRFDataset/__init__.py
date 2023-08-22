@@ -34,7 +34,7 @@ PROPS = [
     # global automatic properties
     ('init_frame_step', bpy.props.IntProperty(name='Initial Frame Step') ),
     ('init_output_path', bpy.props.StringProperty(name='Initial Output Path', subtype='DIR_PATH') ),
-    ('rendering', bpy.props.BoolVectorProperty(name='Rendering', description='Whether one of the SOF, TTC or COS methods is rendering', default=(False, False, False), size=3) ),
+    ('rendering', bpy.props.BoolProperty(name='Rendering', description='Whether one of the SOF, TTC or COS methods is rendering', default=False) ),
     ('nerfdataset_version', bpy.props.StringProperty(name='NeRFDataset Version', default=VERSION) ),
     ('camera_train_target', bpy.props.PointerProperty(type=bpy.types.Object, name=TRAIN_CAM, description='Pointer to the training camera', poll=helper.poll_is_camera) ),
     ('camera_test_target', bpy.props.PointerProperty(type=bpy.types.Object, name=TEST_CAM, description='Pointer to the testing camera', poll=helper.poll_is_camera) ),
