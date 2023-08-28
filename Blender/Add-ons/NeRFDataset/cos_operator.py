@@ -48,19 +48,21 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
         scene.init_active_camera = camera
         scene.frame_start = 0
         scene.frame_current = 0
+
+        # camera on sphere
+        sphere_camera = scene.objects.get(CAMERA_NAME, camera)
+        sphere_output_data = self.get_camera_intrinsics(scene, sphere_camera)
+        sphere_output_data['frames'] = []
+        scene.camera = sphere_camera
     
         if scene.test_data:
             if not scene.show_camera: scene.show_camera = True
             scene.frame_end = scene.frame_start + scene.cos_nb_test_frames - 1
 
-            # test camera on sphere
-            sphere_camera = scene.objects.get(CAMERA_NAME, camera)
-            sphere_output_data = self.get_camera_intrinsics(scene, sphere_camera)
-            scene.camera = sphere_camera
-
             # testing transforms
-            sphere_output_data['frames'] = self.get_camera_extrinsics(scene, sphere_camera, mode='TEST', method='COS')
-            self.save_json(output_path, 'transforms_test.json', sphere_output_data)
+            test_frames = self.get_camera_extrinsics(scene, sphere_camera, mode='TEST', method='COS')
+            sphere_output_data['frames'] += test_frames
+            sphere_output_data['test_filenames'] = [frame["file_path"] for frame in test_frames]
 
             # rendering
             if scene.render_frames:
@@ -76,15 +78,10 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
             if not scene.show_camera: scene.show_camera = True
             scene.frame_end = scene.frame_start + scene.cos_nb_train_frames - 1
 
-            # train camera on sphere
-            sphere_camera = scene.objects.get(CAMERA_NAME, camera)
-            sphere_output_data = self.get_camera_intrinsics(scene, sphere_camera)
-            scene.camera = sphere_camera
-
             # training transforms
-            sphere_output_data['frames'] = self.get_camera_extrinsics(scene, sphere_camera, mode='TRAIN', method='COS')
-            self.save_json(output_path, 'transforms_train.json', sphere_output_data)
-            self.save_json(output_path, 'transforms.json', sphere_output_data)
+            train_frames = self.get_camera_extrinsics(scene, sphere_camera, mode='TRAIN', method='COS')
+            sphere_output_data['frames'] += train_frames
+            sphere_output_data['train_filenames'] = [frame["file_path"] for frame in train_frames]
 
             # rendering
             if scene.render_frames:
@@ -95,6 +92,9 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1
+
+        
+        self.save_json(output_path, 'transforms.json', sphere_output_data)
 
         # if frames are rendered, the below code is executed by the handler function
         if not scene.rendering:
