@@ -69,7 +69,27 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
                 output_test = os.path.join(output_path, 'test')
                 os.makedirs(output_test, exist_ok=True)
                 scene.rendering = True
-                scene.render.filepath = os.path.join(output_test, '') # training frames path
+                scene.render.filepath = os.path.join(output_test, '') # test frames path
+                bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
+
+            scene.frame_start = scene.frame_end + 1
+
+        
+        if scene.val_data:
+            if not scene.show_camera: scene.show_camera = True
+            scene.frame_end = scene.frame_start + scene.cos_nb_val_frames - 1
+
+            # testing transforms
+            val_frames = self.get_camera_extrinsics(scene, sphere_camera, mode='VAL', method='COS')
+            sphere_output_data['frames'] += val_frames
+            sphere_output_data['val_filenames'] = [frame["file_path"] for frame in val_frames]
+
+            # rendering
+            if scene.render_frames:
+                output_val = os.path.join(output_path, 'val')
+                os.makedirs(output_val, exist_ok=True)
+                scene.rendering = True
+                scene.render.filepath = os.path.join(output_val, '') # validation frames path
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1

@@ -178,6 +178,7 @@ class NeRFDataset_Operator(bpy.types.Operator):
         logdata['Lens'] = str(scene.focal) + ' mm'
         logdata['Seed'] = scene.seed
         logdata['Train Frames'] = scene.cos_nb_train_frames
+        logdata['Validation Frames'] = scene.cos_nb_val_frames
         logdata['Test Frames'] = scene.cos_nb_test_frames
         logdata['Upper Views'] = scene.upper_views
         logdata['Outwards'] = scene.outwards
