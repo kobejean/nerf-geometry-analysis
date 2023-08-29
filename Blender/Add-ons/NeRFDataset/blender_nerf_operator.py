@@ -180,7 +180,9 @@ class NeRFDataset_Operator(bpy.types.Operator):
         logdata['Train Frames'] = scene.cos_nb_train_frames
         logdata['Validation Frames'] = scene.cos_nb_val_frames
         logdata['Test Frames'] = scene.cos_nb_test_frames
-        logdata['Upper Views'] = scene.upper_views
+        logdata['Min Altitude'] = scene.min_altitude
+        logdata['Max Altitude'] = scene.max_altitude
+        # logdata['Upper Views'] = scene.upper_views
         logdata['Outwards'] = scene.outwards
         logdata['Dataset Name'] = scene.cos_dataset_name
 

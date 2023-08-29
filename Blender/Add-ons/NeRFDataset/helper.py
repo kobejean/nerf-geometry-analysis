@@ -85,16 +85,21 @@ def delete_camera(scene, name):
 
 # non uniform sampling when stretched or squeezed sphere
 def sample_from_sphere(scene):
-    total = scene.cos_nb_train_frames + scene.cos_nb_test_frames
+    total = scene.cos_nb_train_frames + scene.cos_nb_val_frames + scene.cos_nb_test_frames
+    segments = scene.cos_nb_val_frames + scene.cos_nb_test_frames
 
-    # sample random angles
-    theta = 2 * math.pi * float(scene.frame_current % scene.cos_nb_test_frames) / scene.cos_nb_test_frames 
-    levels = (scene.cos_nb_train_frames // scene.cos_nb_test_frames) + 1
-    phi = math.pi * (0.20 + 0.25 * ((total - 1 - scene.frame_current) // scene.cos_nb_test_frames) / levels) 
-    # uniform sample from unit sphere, given theta and phi
+    # calculate angles
+    max_altitude = scene.min_altitude * math.pi / 180
+    min_altitude = scene.max_altitude * math.pi / 180
+    spread_altitude = max_altitude - min_altitude
+    theta = 2 * math.pi * float(scene.frame_current % segments) / segments 
+    rings = scene.cos_nb_train_frames // segments
+    altitude = min_altitude + spread_altitude * (1 - float(scene.frame_current // segments) / rings)
+    phi = math.pi/2 - altitude
+    # sample from unit sphere, given theta and phi
     unit_x = math.cos(theta) * math.sin(phi)
     unit_y = math.sin(theta) * math.sin(phi)
-    unit_z = abs( math.cos(phi) ) if scene.upper_views else math.cos(phi)
+    unit_z = math.cos(phi)
     unit = mathutils.Vector((unit_x, unit_y, unit_z))
 
     # ellipsoid sample : center + rotation @ radius * unit sphere

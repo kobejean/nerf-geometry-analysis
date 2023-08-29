@@ -29,7 +29,9 @@ class COS_UI(bpy.types.Panel):
         layout.prop(scene, 'cos_nb_train_frames')
         layout.prop(scene, 'cos_nb_val_frames')
         layout.prop(scene, 'cos_nb_test_frames')
-        layout.prop(scene, 'upper_views', toggle=True)
+        layout.prop(scene, 'min_altitude')
+        layout.prop(scene, 'max_altitude')
+        # layout.prop(scene, 'upper_views', toggle=True)
         layout.prop(scene, 'outwards', toggle=True)
 
         layout.use_property_split = False

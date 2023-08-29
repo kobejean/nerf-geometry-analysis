@@ -50,9 +50,11 @@ PROPS = [
     ('cos_nb_train_frames', bpy.props.IntProperty(name='Train Frames', description='Number of training frames randomly sampled from the training sphere', default=80, soft_min=1) ),
     ('cos_nb_val_frames', bpy.props.IntProperty(name='Validation Frames', description='Number of validation frames randomly sampled from the training sphere', default=10, soft_min=1) ),
     ('cos_nb_test_frames', bpy.props.IntProperty(name='Test Frames', description='Number of training frames randomly sampled from the training sphere', default=10, soft_min=1) ),
+    ('min_altitude', bpy.props.FloatProperty(name='Minimum Altitude', description='Minimum altitude angle', default=10, soft_min=-90, soft_max=90) ),
+    ('max_altitude', bpy.props.FloatProperty(name='Maximum Altitude', description='Maximum altitude angle', default=75, soft_min=-90, soft_max=90) ),
     ('show_sphere', bpy.props.BoolProperty(name='Sphere', description='Whether to show the training sphere from which random views will be sampled', default=False, update=helper.visualize_sphere) ),
     ('show_camera', bpy.props.BoolProperty(name='Camera', description='Whether to show the training camera', default=False, update=helper.visualize_camera) ),
-    ('upper_views', bpy.props.BoolProperty(name='Upper Views', description='Whether to sample views from the upper hemisphere of the training sphere only', default=False) ),
+    # ('upper_views', bpy.props.BoolProperty(name='Upper Views', description='Whether to sample views from the upper hemisphere of the training sphere only', default=False) ),
     ('outwards', bpy.props.BoolProperty(name='Outwards', description='Whether to point the camera outwards of the training sphere', default=False, update=helper.properties_ui_upd) ),
 
     # cos automatic properties
