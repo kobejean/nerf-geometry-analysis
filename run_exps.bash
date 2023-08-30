@@ -7,12 +7,13 @@ DATASETS=("$DATASET_DIR/${DATASETS[@]}")
 
 for METHOD in "${FAST_METHODS[@]}"; do
   for DATASET in "${DATASETS[@]}"; do
-    echo "ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nerfstudio-data"
-    ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nerfstudio-data
+    echo "ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nerfstudio-data --data $DATASET"
+    ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nerfstudio-data --data $DATASET
   done
 done
 
 for METHOD in "${SLOW_METHODS[@]}"; do
-  echo "ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data ~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1 nerfstudio-data"
-  ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data ~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1 nerfstudio-data
+  DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1
+  echo "ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nerfstudio-data --data $DATASET"
+  ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nerfstudio-data --data $DATASET
 done
