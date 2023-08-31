@@ -2,3 +2,5 @@ backup/
 outputs/
 *.blend1
 Blender/checkerboard
+__pycache__
+*.egg-info
