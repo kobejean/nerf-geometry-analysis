@@ -71,9 +71,19 @@ def eval(config_path):
     rgb = outputs["rgb"]
     acc = colormaps.apply_colormap(outputs["accumulation"])
     depth = colormaps.apply_depth_colormap(
-        torch.log(outputs["depth"]),
+        outputs["depth"],
         accumulation=outputs["accumulation"],
     )
+
+    z = near_z - outputs["depth"]
+    z /= dataparser_scale
+    z -= transform[2,3]
+    print(z)
+    z_vis = colormaps.apply_depth_colormap(
+        torch.clamp(z, -0.01, 0.3),
+        accumulation=outputs["accumulation"],
+    )
+    
     Image.fromarray((rgb * 255).byte().cpu().numpy()).save(
         render_output_path / "rgb.jpg"
     )
@@ -83,11 +93,9 @@ def eval(config_path):
     Image.fromarray((depth * 255).byte().cpu().numpy()).save(
         render_output_path / "depth.jpg"
     )
-
-    z = near_z - outputs["depth"]
-    z /= dataparser_scale
-    z -= transform[2,3]
-    print(z)
+    Image.fromarray((z_vis * 255).byte().cpu().numpy()).save(
+        render_output_path / "z.jpg"
+    )
     torch.save(z, render_output_path / "z.pt")
 
     # Get the output and define the names to save to
