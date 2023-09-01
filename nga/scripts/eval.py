@@ -18,7 +18,7 @@ def load_config(config_path):
     config.print_to_terminal()
     return config
 
-def next_eval(dataparser_scale, near_z, n = 41):
+def next_eval(dataparser_scale, near_z, n = 1001):
     x = torch.linspace(-0.5, 0.5, n) * dataparser_scale
     y = torch.linspace(-0.5, 0.5, n) * dataparser_scale
     grid_x, grid_y = torch.meshgrid(x, y)
