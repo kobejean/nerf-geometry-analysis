@@ -71,7 +71,7 @@ def eval(config_path):
     rgb = outputs["rgb"]
     acc = colormaps.apply_colormap(outputs["accumulation"])
     depth = colormaps.apply_depth_colormap(
-        outputs["depth"],
+        torch.log(outputs["depth"]),
         accumulation=outputs["accumulation"],
     )
     Image.fromarray((rgb * 255).byte().cpu().numpy()).save(
