@@ -88,7 +88,7 @@ def eval(config_path):
     z /= dataparser_scale
     z -= transform[2,3]
     print(z)
-    np.save(z, render_output_path / "z.pt")
+    torch.save(z, render_output_path / "z.pt")
 
     # Get the output and define the names to save to
     benchmark_info = {
