@@ -19,6 +19,12 @@ TRAIN_CAM = 'Train Cam'
 TEST_CAM = 'Test Cam'
 VERSION = '.'.join(str(x) for x in bl_info['version'])
 
+class VectorPropertyGroup(bpy.types.PropertyGroup):
+    vector: bpy.props.FloatVectorProperty(size=3)
+
+bpy.utils.register_class(VectorPropertyGroup)
+
+
 # addon blender properties
 PROPS = [
     # global controllable properties
@@ -41,6 +47,16 @@ PROPS = [
 
     # cos controllable properties
     ('cos_dataset_name', bpy.props.StringProperty(name='Name', description='Name of the COS dataset : the data will be stored under <save path>/<name>', default='dataset') ),
+    ('camera_layout_mode', bpy.props.EnumProperty(
+        items=[
+            ("sphere", "Sphere", "Layout cameras in a spherical arrangement"),
+            ("circle", "Circle", "Layout cameras in a circular arrangement"),
+            ("stereo", "Stereo", "Layout cameras for stereo vision")
+        ],
+        name="Camera Layout Mode",
+        description="Choose the camera layout mode",
+        default="sphere"
+    )),
     ('sphere_location', bpy.props.FloatVectorProperty(name='Location', description='Center position of the training sphere', unit='LENGTH', update=helper.properties_ui_upd) ),
     ('sphere_rotation', bpy.props.FloatVectorProperty(name='Rotation', description='Rotation of the training sphere', unit='ROTATION', update=helper.properties_ui_upd) ),
     ('sphere_scale', bpy.props.FloatVectorProperty(name='Scale', description='Scale of the training sphere in xyz axes', default=(1.0, 1.0, 1.0), update=helper.properties_ui_upd) ),
@@ -64,6 +80,11 @@ PROPS = [
     ('init_camera_exists', bpy.props.BoolProperty(name='Init camera exists', description='Whether the camera initially exists', default=False) ),
     ('init_active_camera', bpy.props.PointerProperty(type=bpy.types.Object, name='Init active camera', description='Pointer to initial active camera', poll=helper.poll_is_camera) ),
     ('init_frame_end', bpy.props.IntProperty(name='Initial Frame End') ),
+    
+    ('test_points', bpy.props.CollectionProperty(type=VectorPropertyGroup, name='Test Points') ),
+    ('val_points', bpy.props.CollectionProperty(type=VectorPropertyGroup, name='Val Points') ),
+    ('train_points', bpy.props.CollectionProperty(type=VectorPropertyGroup, name='Train Points') ),
+
 ]
 
 # classes to register / unregister

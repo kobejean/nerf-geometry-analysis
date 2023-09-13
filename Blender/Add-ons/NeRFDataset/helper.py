@@ -11,6 +11,198 @@ from bpy.app.handlers import persistent
 EMPTY_NAME = 'NeRFDataset Sphere'
 CAMERA_NAME = 'NeRFDataset Camera'
 
+def create_sphere_camera_points(scene):
+    num_test = scene.cos_nb_test_frames if scene.test_data else 0
+    num_val = scene.cos_nb_val_frames if scene.val_data else 0
+    num_train = scene.cos_nb_train_frames if scene.train_data else 0
+    
+    total = num_test + num_val + num_train
+    segments = num_test + num_val
+
+    # calculate angles
+    max_altitude = scene.min_altitude * math.pi / 180
+    min_altitude = scene.max_altitude * math.pi / 180
+    spread_altitude = max_altitude - min_altitude
+    rings = scene.cos_nb_train_frames // segments
+
+    test = []
+    val = []
+    train = []
+    scene.test_points.clear()
+    scene.val_points.clear()
+    scene.train_points.clear()
+    for i in range(total):
+        theta = 2 * math.pi * float(i % segments) / segments 
+        altitude = min_altitude + spread_altitude * (1 - float(i // segments) / rings)
+        phi = math.pi/2 - altitude
+
+        # sample from unit sphere, given theta and phi
+        unit_x = math.cos(theta) * math.sin(phi)
+        unit_y = math.sin(theta) * math.sin(phi)
+        unit_z = math.cos(phi)
+        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+        # ellipsoid sample : center + rotation @ radius * unit sphere
+        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+        if i < num_test:
+            item = scene.test_points.add()
+            item.vector = point
+        elif i < num_test + num_val:
+            item = scene.val_points.add()
+            item.vector = point
+        else:
+            item = scene.train_points.add()
+            item.vector = point
+
+
+def create_circle_camera_points(scene):
+    num_test = scene.cos_nb_test_frames if scene.test_data else 0
+    num_val = scene.cos_nb_val_frames if scene.val_data else 0
+    num_train = scene.cos_nb_train_frames if scene.train_data else 0
+    
+    total = num_test + num_val + num_train
+    segments = num_test + num_val
+
+    # calculate angles
+
+    scene.test_points.clear()
+    scene.val_points.clear()
+    scene.train_points.clear()        
+    
+    phi = math.pi / 3
+
+    for i in range(num_test):
+        theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
+
+        # sample from unit sphere, given theta and phi
+        unit_x = math.cos(theta) * math.sin(phi)
+        unit_y = math.sin(theta) * math.sin(phi)
+        unit_z = math.cos(phi)
+        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+        # ellipsoid sample : center + rotation @ radius * unit sphere
+        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+        # add point
+        item = scene.test_points.add()
+        item.vector = point
+
+    for i in range(num_val):
+        theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
+
+        # sample from unit sphere, given theta and phi
+        unit_x = math.cos(theta) * math.sin(phi)
+        unit_y = math.sin(theta) * math.sin(phi)
+        unit_z = math.cos(phi)
+        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+        # ellipsoid sample : center + rotation @ radius * unit sphere
+        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+        # add point
+        item = scene.val_points.add()
+        item.vector = point
+
+    
+    for i in range(num_train):
+        theta = 2 * math.pi * float(i % num_train) / num_train 
+
+        # sample from unit sphere, given theta and phi
+        unit_x = math.cos(theta) * math.sin(phi)
+        unit_y = math.sin(theta) * math.sin(phi)
+        unit_z = math.cos(phi)
+        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+        # ellipsoid sample : center + rotation @ radius * unit sphere
+        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+        # add point
+        item = scene.train_points.add()
+        item.vector = point
+
+
+def create_stereo_camera_points(scene):
+    num_test = scene.cos_nb_test_frames if scene.test_data else 0
+    num_val = scene.cos_nb_val_frames if scene.val_data else 0
+    num_train = scene.cos_nb_train_frames if scene.train_data else 0
+    
+    total = num_test + num_val + num_train
+    segments = num_test + num_val
+
+    # calculate angles
+
+    scene.test_points.clear()
+    scene.val_points.clear()
+    scene.train_points.clear()        
+    
+    phi = math.pi / 3
+
+    for i in range(num_test):
+        theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
+
+        # sample from unit sphere, given theta and phi
+        unit_x = math.cos(theta) * math.sin(phi)
+        unit_y = math.sin(theta) * math.sin(phi)
+        unit_z = math.cos(phi)
+        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+        # ellipsoid sample : center + rotation @ radius * unit sphere
+        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+        # add point
+        item = scene.test_points.add()
+        item.vector = point
+
+    for i in range(num_val):
+        theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
+
+        # sample from unit sphere, given theta and phi
+        unit_x = math.cos(theta) * math.sin(phi)
+        unit_y = math.sin(theta) * math.sin(phi)
+        unit_z = math.cos(phi)
+        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+        # ellipsoid sample : center + rotation @ radius * unit sphere
+        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+        # add point
+        item = scene.val_points.add()
+        item.vector = point
+
+    
+    for i in range(num_train):
+        theta = 2 * math.pi * float(i % num_train) / num_train 
+
+        # sample from unit sphere, given theta and phi
+        unit_x = math.cos(theta) * math.sin(phi)
+        unit_y = math.sin(theta) * math.sin(phi)
+        unit_z = math.cos(phi)
+        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+        # ellipsoid sample : center + rotation @ radius * unit sphere
+        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+        # add point
+        item = scene.train_points.add()
+        item.vector = point
+
+
+
 ## property poll and update functions
 
 # camera pointer property poll function
@@ -52,7 +244,7 @@ def visualize_camera(self, context):
         camera = context.active_object
         camera.name = CAMERA_NAME
         camera.data.name = CAMERA_NAME
-        camera.location = sample_from_sphere(scene)
+        camera.location = sample_point(scene)
         bpy.data.cameras[CAMERA_NAME].lens = scene.focal
 
         cam_constraint = camera.constraints.new(type='TRACK_TO')
@@ -84,30 +276,21 @@ def delete_camera(scene, name):
             bpy.data.cameras.remove(block)
 
 # non uniform sampling when stretched or squeezed sphere
-def sample_from_sphere(scene):
-    total = scene.cos_nb_train_frames + scene.cos_nb_val_frames + scene.cos_nb_test_frames
-    segments = scene.cos_nb_val_frames + scene.cos_nb_test_frames
+def sample_point(scene):
+    num_test = scene.cos_nb_test_frames if scene.test_data else 0
+    num_val = scene.cos_nb_val_frames if scene.val_data else 0
+    num_train = scene.cos_nb_train_frames if scene.train_data else 0
+    print(scene.frame_current)
 
-    # calculate angles
-    max_altitude = scene.min_altitude * math.pi / 180
-    min_altitude = scene.max_altitude * math.pi / 180
-    spread_altitude = max_altitude - min_altitude
-    theta = 2 * math.pi * float(scene.frame_current % segments) / segments 
-    rings = scene.cos_nb_train_frames // segments
-    altitude = min_altitude + spread_altitude * (1 - float(scene.frame_current // segments) / rings)
-    phi = math.pi/2 - altitude
-    # sample from unit sphere, given theta and phi
-    unit_x = math.cos(theta) * math.sin(phi)
-    unit_y = math.sin(theta) * math.sin(phi)
-    unit_z = math.cos(phi)
-    unit = mathutils.Vector((unit_x, unit_y, unit_z))
-
-    # ellipsoid sample : center + rotation @ radius * unit sphere
-    point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
-    rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
-    point = mathutils.Vector(scene.sphere_location) + rotation @ point
-
-    return point
+    if scene.frame_current < num_test:
+        i = scene.frame_current
+        return scene.test_points[i].vector
+    elif scene.frame_current < num_test + num_val:
+        i = scene.frame_current - num_test
+        return scene.val_points[i].vector
+    else:
+        i = scene.frame_current - num_test - num_val
+        return scene.train_points[i].vector
 
 ## two way property link between sphere and ui (property and handler functions)
 # https://blender.stackexchange.com/questions/261174/2-way-property-link-or-a-filtered-property-display
@@ -168,7 +351,7 @@ def properties_desgraph(scene):
                 bpy.data.cameras.remove(block)
 
     if CAMERA_NAME in scene.objects.keys():
-        scene.objects[CAMERA_NAME].location = sample_from_sphere(scene)
+        scene.objects[CAMERA_NAME].location = sample_point(scene)
 
 def empty_fn(self, context): pass
 
@@ -190,10 +373,10 @@ def upd_on():
 # reset properties back to intial
 @persistent
 def post_render(scene):
-    if any(scene.rendering): # execute this function only when rendering with addon
+    if scene.rendering: # execute this function only when rendering with addon
         method_dataset_name = scene.cos_dataset_name
 
-        scene.rendering = (False, False, False)
+        scene.rendering = False
         scene.render.filepath = scene.init_output_path # reset filepath
 
 
@@ -214,4 +397,4 @@ def set_init_props(scene):
 @persistent
 def cos_camera_update(scene):
     if CAMERA_NAME in scene.objects.keys():
-        scene.objects[CAMERA_NAME].location = sample_from_sphere(scene)
+        scene.objects[CAMERA_NAME].location = sample_point(scene)
