@@ -1,5 +1,7 @@
 import os
 import shutil
+import math
+import mathutils
 import bpy
 from . import helper, blender_nerf_operator
 
@@ -28,6 +30,13 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
         if len(error_messages) > 0:
            self.report({'ERROR'}, error_messages[0])
            return {'FINISHED'}
+        
+        if scene.camera_layout_mode == "sphere":
+            helper.create_sphere_camera_points(scene)
+        elif scene.camera_layout_mode == "circle":
+            helper.create_circle_camera_points(scene)
+        elif scene.camera_layout_mode == "stereo":
+            helper.create_stereo_camera_points(scene)
 
         output_data = self.get_camera_intrinsics(scene, camera)
         depth_map_file_output = helper.find_tagged_nodes(scene.node_tree, "depth_map_file_output")[0]
