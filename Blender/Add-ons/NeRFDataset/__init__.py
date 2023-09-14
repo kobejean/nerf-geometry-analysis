@@ -86,6 +86,7 @@ def register():
     bpy.app.handlers.frame_change_post.append(helper.cos_camera_update)
     bpy.app.handlers.depsgraph_update_post.append(helper.properties_desgraph_upd)
     bpy.app.handlers.depsgraph_update_post.append(helper.set_init_props)
+    helper.setup_depth_map_rendering()
 
 # deregister addon
 def unregister():

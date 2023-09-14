@@ -30,6 +30,7 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
            return {'FINISHED'}
 
         output_data = self.get_camera_intrinsics(scene, camera)
+        depth_map_file_output = helper.find_tagged_nodes(scene.node_tree, "depth_map_file_output")[0]
 
         # clean directory name (unsupported characters replaced) and output path
         output_dir = bpy.path.clean_name(scene.cos_dataset_name)
@@ -67,9 +68,13 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
             # rendering
             if scene.render_frames:
                 output_test = os.path.join(output_path, 'test')
+                output_test_depth = os.path.join(output_test, 'depth')
                 os.makedirs(output_test, exist_ok=True)
+                os.makedirs(output_test_depth, exist_ok=True)
                 scene.rendering = True
                 scene.render.filepath = os.path.join(output_test, '') # test frames path
+
+                depth_map_file_output.base_path = output_test_depth
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1

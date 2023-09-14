@@ -215,3 +215,49 @@ def set_init_props(scene):
 def cos_camera_update(scene):
     if CAMERA_NAME in scene.objects.keys():
         scene.objects[CAMERA_NAME].location = sample_from_sphere(scene)
+
+def find_tagged_nodes(node_tree, tag_value):
+    tagged_nodes = []
+    for node in node_tree.nodes:
+        if "tag" in node.keys() and node["tag"] == tag_value:
+            tagged_nodes.append(node)
+    return tagged_nodes
+
+
+def setup_depth_map_rendering():
+    bpy.context.view_layer.use_pass_z = True
+
+    links = None
+    needs_setup = not bpy.context.scene.use_nodes
+
+    # Enable Node Usage for the Scene
+    bpy.context.scene.use_nodes = True
+    tree = bpy.context.scene.node_tree
+    links = tree.links
+
+    # If we have already setup then return
+    if find_tagged_nodes(tree, "depth_map_file_output"):
+        return
+
+
+    # Add New Nodes for Depth Map
+    render_layers = tree.nodes.new('CompositorNodeRLayers')
+
+    # Add a map value node
+    map_node = tree.nodes.new(type='CompositorNodeMapValue')
+    map_node.location = (150,100)
+    map_node.scale[0] = 1000
+
+    # Add File Output Node
+    file_output = tree.nodes.new('CompositorNodeOutputFile')
+    file_output.format.file_format = 'OPEN_EXR'
+    file_output.format.color_depth = '32'
+    file_output["tag"] = "depth_map_file_output"
+
+    if needs_setup:
+        composite = tree.nodes.new('CompositorNodeComposite')
+        links.new(render_layers.outputs['Image'], composite.inputs['Image'])
+
+    # Link Nodes
+    links.new(render_layers.outputs['Depth'], map_node.inputs[0])
+    links.new(map_node.outputs[0], file_output.inputs[0])
