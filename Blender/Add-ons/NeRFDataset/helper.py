@@ -408,6 +408,7 @@ def find_tagged_nodes(node_tree, tag_value):
 
 
 def setup_depth_map_rendering():
+    print("setup_depth_map_rendering")
     bpy.context.view_layer.use_pass_z = True
 
     links = None
@@ -429,12 +430,13 @@ def setup_depth_map_rendering():
     # Add a map value node
     map_node = tree.nodes.new(type='CompositorNodeMapValue')
     map_node.location = (150,100)
-    map_node.scale[0] = 1000
+    map_node.size[0] = 1000
 
     # Add File Output Node
     file_output = tree.nodes.new('CompositorNodeOutputFile')
-    file_output.format.file_format = 'OPEN_EXR'
-    file_output.format.color_depth = '32'
+    file_output.format.file_format = 'PNG'
+    file_output.format.color_depth = '16'
+    file_output.file_slots[0].path = "depth_####"
     file_output["tag"] = "depth_map_file_output"
 
     if needs_setup:

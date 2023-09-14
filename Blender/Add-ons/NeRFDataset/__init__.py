@@ -102,18 +102,19 @@ def register():
     for cls in CLASSES:
         bpy.utils.register_class(cls)
 
+    # bpy.app.handlers.load_post.append(helper.setup_depth_map_rendering)
     bpy.app.handlers.render_complete.append(helper.post_render)
     bpy.app.handlers.render_cancel.append(helper.post_render)
     bpy.app.handlers.frame_change_post.append(helper.cos_camera_update)
     bpy.app.handlers.depsgraph_update_post.append(helper.properties_desgraph_upd)
     bpy.app.handlers.depsgraph_update_post.append(helper.set_init_props)
-    helper.setup_depth_map_rendering()
 
 # deregister addon
 def unregister():
     for (prop_name, _) in PROPS:
         delattr(bpy.types.Scene, prop_name)
 
+    # bpy.app.handlers.load_post.remove(helper.setup_depth_map_rendering)
     bpy.app.handlers.render_complete.remove(helper.post_render)
     bpy.app.handlers.render_cancel.remove(helper.post_render)
     bpy.app.handlers.frame_change_post.remove(helper.cos_camera_update)

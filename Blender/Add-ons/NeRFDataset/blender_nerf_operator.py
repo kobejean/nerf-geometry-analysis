@@ -97,6 +97,7 @@ class NeRFDataset_Operator(bpy.types.Operator):
 
             frame_data = {
                 'file_path': os.path.join(filedir, filename),
+                'depth_file_path': os.path.join(filedir, 'depth_' + filename),
                 'transform_matrix': self.listify_matrix( camera.matrix_world )
             }
 

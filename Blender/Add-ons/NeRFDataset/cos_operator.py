@@ -38,6 +38,8 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
         elif scene.camera_layout_mode == "stereo":
             helper.create_stereo_camera_points(scene)
 
+        helper.setup_depth_map_rendering()
+
         output_data = self.get_camera_intrinsics(scene, camera)
         depth_map_file_output = helper.find_tagged_nodes(scene.node_tree, "depth_map_file_output")[0]
 
@@ -77,13 +79,10 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
             # rendering
             if scene.render_frames:
                 output_test = os.path.join(output_path, 'test')
-                output_test_depth = os.path.join(output_test, 'depth')
                 os.makedirs(output_test, exist_ok=True)
-                os.makedirs(output_test_depth, exist_ok=True)
                 scene.rendering = True
                 scene.render.filepath = os.path.join(output_test, '') # test frames path
-
-                depth_map_file_output.base_path = output_test_depth
+                depth_map_file_output.base_path = output_test
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1
@@ -104,6 +103,7 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
                 os.makedirs(output_val, exist_ok=True)
                 scene.rendering = True
                 scene.render.filepath = os.path.join(output_val, '') # validation frames path
+                depth_map_file_output.base_path = output_val
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1
@@ -123,6 +123,7 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
                 os.makedirs(output_train, exist_ok=True)
                 scene.rendering = True
                 scene.render.filepath = os.path.join(output_train, '') # training frames path
+                depth_map_file_output.base_path = output_train
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1
