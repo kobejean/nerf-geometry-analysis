@@ -427,15 +427,10 @@ def setup_depth_map_rendering():
     # Add New Nodes for Depth Map
     render_layers = tree.nodes.new('CompositorNodeRLayers')
 
-    # Add a map value node
-    map_node = tree.nodes.new(type='CompositorNodeMapValue')
-    map_node.location = (150,100)
-    map_node.size[0] = 1000
-
     # Add File Output Node
     file_output = tree.nodes.new('CompositorNodeOutputFile')
-    file_output.format.file_format = 'PNG'
-    file_output.format.color_depth = '16'
+    file_output.format.file_format = 'OPEN_EXR'
+    file_output.format.color_depth = '32'
     file_output.file_slots[0].path = "depth_####"
     file_output["tag"] = "depth_map_file_output"
 
@@ -444,5 +439,4 @@ def setup_depth_map_rendering():
         links.new(render_layers.outputs['Image'], composite.inputs['Image'])
 
     # Link Nodes
-    links.new(render_layers.outputs['Depth'], map_node.inputs[0])
-    links.new(map_node.outputs[0], file_output.inputs[0])
+    links.new(render_layers.outputs['Depth'], file_output.inputs[0])

@@ -20,7 +20,7 @@ DATASETS=("$DATASET_DIR/${DATASETS[@]}")
 # done
 
 for METHOD in "${METHODS[@]}"; do
-  DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1_720x480_circle_path
+  DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1_720x480
   echo "ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nerfstudio-data --data $DATASET"
   ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nerfstudio-data --data $DATASET
 done
