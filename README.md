@@ -1,3 +1,9 @@
+## Install Deps
+```
+sudo apt install libopenexr-dev zlib1g-dev
+pip install git+https://github.com/jamesbowman/openexrpython.git
+```
+
 ## Blender file
 
 The blender project file is located at: `<repo-root>/Blender/checkerboard.blend`
