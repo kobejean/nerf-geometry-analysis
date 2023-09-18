@@ -45,28 +45,38 @@ machine: !!python/object:nerfstudio.configs.base_config.MachineConfig
   num_devices: 1
   num_machines: 1
   seed: 42
-max_num_iterations: 30000
-method_name: instant-ngp
+max_num_iterations: 30001
+method_name: kplanes
 mixed_precision: true
 optimizers:
   fields:
     optimizer: !!python/object:nerfstudio.engine.optimizers.AdamOptimizerConfig
       _target: &id001 !!python/name:torch.optim.adam.Adam ''
-      eps: 1.0e-15
+      eps: 1.0e-12
       lr: 0.01
       max_norm: null
       weight_decay: 0
-    scheduler: !!python/object:nerfstudio.engine.schedulers.ExponentialDecaySchedulerConfig
-      _target: &id002 !!python/name:nerfstudio.engine.schedulers.ExponentialDecayScheduler ''
-      lr_final: 0.0001
-      lr_pre_warmup: 1.0e-08
-      max_steps: 200000
-      ramp: cosine
-      warmup_steps: 0
+    scheduler: !!python/object:nerfstudio.engine.schedulers.CosineDecaySchedulerConfig
+      _target: &id002 !!python/name:nerfstudio.engine.schedulers.CosineDecayScheduler ''
+      learning_rate_alpha: 0.05
+      max_steps: 30000
+      warm_up_end: 512
+  proposal_networks:
+    optimizer: !!python/object:nerfstudio.engine.optimizers.AdamOptimizerConfig
+      _target: *id001
+      eps: 1.0e-12
+      lr: 0.01
+      max_norm: null
+      weight_decay: 0
+    scheduler: !!python/object:nerfstudio.engine.schedulers.CosineDecaySchedulerConfig
+      _target: *id002
+      learning_rate_alpha: 0.05
+      max_steps: 30000
+      warm_up_end: 512
 output_dir: !!python/object/apply:pathlib.PosixPath
 - outputs
-pipeline: !!python/object:nerfstudio.pipelines.dynamic_batch.DynamicBatchPipelineConfig
-  _target: !!python/name:nerfstudio.pipelines.dynamic_batch.DynamicBatchPipeline ''
+pipeline: !!python/object:nerfstudio.pipelines.base_pipeline.VanillaPipelineConfig
+  _target: !!python/name:nerfstudio.pipelines.base_pipeline.VanillaPipeline ''
   datamanager: !!python/object:nerfstudio.data.datamanagers.base_datamanager.VanillaDataManagerConfig
     _target: !!python/name:nerfstudio.data.datamanagers.base_datamanager.VanillaDataManager ''
     camera_optimizer: !!python/object:nerfstudio.cameras.camera_optimizers.CameraOptimizerConfig
@@ -82,10 +92,10 @@ pipeline: !!python/object:nerfstudio.pipelines.dynamic_batch.DynamicBatchPipelin
       param_group: camera_opt
       position_noise_std: 0.0
       scheduler: !!python/object:nerfstudio.engine.schedulers.ExponentialDecaySchedulerConfig
-        _target: *id002
-        lr_final: 6.0e-06
+        _target: !!python/name:nerfstudio.engine.schedulers.ExponentialDecayScheduler ''
+        lr_final: null
         lr_pre_warmup: 1.0e-08
-        max_steps: 200000
+        max_steps: 10000
         ramp: cosine
         warmup_steps: 0
     camera_res_scale_factor: 1.0
@@ -127,48 +137,79 @@ pipeline: !!python/object:nerfstudio.pipelines.dynamic_batch.DynamicBatchPipelin
     train_num_images_to_sample_from: -1
     train_num_rays_per_batch: 4096
     train_num_times_to_repeat_images: -1
-  max_num_samples_per_ray: 1024
-  model: !!python/object:nerfstudio.models.instant_ngp.InstantNGPModelConfig
-    _target: !!python/name:nerfstudio.models.instant_ngp.NGPModel ''
-    alpha_thre: 0.01
+  model: !!python/object:kplanes.kplanes.KPlanesModelConfig
+    _target: !!python/name:kplanes.kplanes.KPlanesModel ''
+    appearance_embedding_dim: 0
     background_color: random
-    collider_params: null
-    cone_angle: 0.004
-    disable_scene_contraction: false
-    enable_collider: false
-    eval_num_rays_per_chunk: 8192
-    far_plane: 1000.0
-    grid_levels: 4
-    grid_resolution: 128
-    log2_hashmap_size: 19
+    collider_params:
+      far_plane: 6.0
+      near_plane: 2.0
+    concat_features_across_scales: true
+    enable_collider: true
+    eval_num_rays_per_chunk: 32768
+    far_plane: 6.0
+    grid_base_resolution:
+    - 128
+    - 128
+    - 128
+    grid_feature_dim: 32
+    is_contracted: false
+    linear_decoder: false
+    linear_decoder_layers: 1
     loss_coefficients:
-      rgb_loss_coarse: 1.0
-      rgb_loss_fine: 1.0
-    max_res: 2048
-    near_plane: 0.05
+      distortion: 0.01
+      interlevel: 1.0
+      plane_tv: 0.01
+      plane_tv_proposal_net: 0.0001
+    multiscale_res:
+    - 1
+    - 2
+    - 4
+    near_plane: 2.0
+    num_proposal_iterations: 2
+    num_proposal_samples: !!python/tuple
+    - 256
+    - 128
+    num_samples: 48
     prompt: null
-    render_step_size: null
-    use_appearance_embedding: false
-  target_num_samples: 262144
+    proposal_net_args_list:
+    - num_output_coords: 8
+      resolution:
+      - 128
+      - 128
+      - 128
+    - num_output_coords: 8
+      resolution:
+      - 256
+      - 256
+      - 256
+    proposal_update_every: 5
+    proposal_warmup: 5000
+    proposal_weights_anneal_max_num_iters: 1000
+    proposal_weights_anneal_slope: 10.0
+    single_jitter: false
+    use_average_appearance_embedding: true
+    use_proposal_weight_anneal: true
+    use_same_proposal_network: false
 project_name: nerfstudio-project
 prompt: null
 relative_model_dir: !!python/object/apply:pathlib.PosixPath
 - nerfstudio_models
 save_only_latest_checkpoint: true
-steps_per_eval_all_images: 25000
+steps_per_eval_all_images: 30000
 steps_per_eval_batch: 500
 steps_per_eval_image: 500
 steps_per_save: 2000
-timestamp: 2023-09-17_161048
+timestamp: 2023-09-18_200215
 use_grad_scaler: false
 viewer: !!python/object:nerfstudio.configs.base_config.ViewerConfig
   image_format: jpeg
   jpeg_quality: 90
   max_num_display_images: 512
-  num_rays_per_chunk: 4096
-  quit_on_train_completion: True
+  num_rays_per_chunk: 32768
+  quit_on_train_completion: true
   relative_log_filename: viewer_log_filename.txt
   websocket_host: 0.0.0.0
   websocket_port: null
   websocket_port_default: 7007
-vis: viewer
+vis: tensorboard

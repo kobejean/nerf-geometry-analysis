@@ -50,6 +50,7 @@ PROPS = [
     ('camera_layout_mode', bpy.props.EnumProperty(
         items=[
             ("sphere", "Sphere", "Layout cameras in a spherical arrangement"),
+            ("hemisphere", "Hemisphere", "Layout cameras in a hemispherical arrangement"),
             ("circle", "Circle", "Layout cameras in a circular arrangement"),
             ("stereo", "Stereo", "Layout cameras for stereo vision")
         ],

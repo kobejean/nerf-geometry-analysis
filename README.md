@@ -2,6 +2,7 @@
 ```
 sudo apt install libopenexr-dev zlib1g-dev
 pip install git+https://github.com/jamesbowman/openexrpython.git
+pip install git+https://github.com/kobejean/kplanes_nerfstudio.git
 ```
 
 ## Blender file

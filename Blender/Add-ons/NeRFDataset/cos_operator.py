@@ -33,6 +33,8 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
         
         if scene.camera_layout_mode == "sphere":
             helper.create_sphere_camera_points(scene)
+        elif scene.camera_layout_mode == "hemisphere":
+            helper.create_hemisphere_camera_points(scene)
         elif scene.camera_layout_mode == "circle":
             helper.create_circle_camera_points(scene)
         elif scene.camera_layout_mode == "stereo":
