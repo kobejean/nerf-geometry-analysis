@@ -131,7 +131,7 @@ pipeline: !!python/object:nerfstudio.pipelines.dynamic_batch.DynamicBatchPipelin
   model: !!python/object:nerfstudio.models.instant_ngp.InstantNGPModelConfig
     _target: !!python/name:nerfstudio.models.instant_ngp.NGPModel ''
     alpha_thre: 0.0
-    background_color: black
+    background_color: random
     collider_params: null
     cone_angle: 0.0
     disable_scene_contraction: true

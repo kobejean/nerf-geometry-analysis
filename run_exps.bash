@@ -1,9 +1,7 @@
 DATASET_DIR=~/Datasets/NeRF/nerf-geometry-analysis
 # FAST_METHODS=("instant-ngp" "tensorf")
 # SLOW_METHODS=("vanilla-nerf" "neus" "mipnerf")
-# METHODS=("instant-ngp" "tensorf" "nerfacto")
-# METHODS=("instant-ngp-bounded" "tetra-nerf" "lerf" "kplanes")
-METHODS=("kplanes")
+METHODS=("kplanes" "instant-ngp-bounded" "instant-ngp" "tensorf" "nerfacto")
 # DATASETS=($(ls -d "$DATASET_DIR"/*))
 DATASETS=("pattern_plane1" "checkered_plane" "black_line_bg_white" "black_square_bg_white")
 DATASETS=("$DATASET_DIR/${DATASETS[@]}")
