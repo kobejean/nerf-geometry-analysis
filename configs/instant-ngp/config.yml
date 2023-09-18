@@ -159,7 +159,6 @@ steps_per_eval_all_images: 25000
 steps_per_eval_batch: 500
 steps_per_eval_image: 500
 steps_per_save: 2000
-timestamp: 2023-09-17_161048
 use_grad_scaler: false
 viewer: !!python/object:nerfstudio.configs.base_config.ViewerConfig
   image_format: jpeg
@@ -171,4 +170,4 @@ viewer: !!python/object:nerfstudio.configs.base_config.ViewerConfig
   websocket_host: 0.0.0.0
   websocket_port: null
   websocket_port_default: 7007
-vis: viewer
+vis: tensorboard

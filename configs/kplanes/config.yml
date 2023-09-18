@@ -200,7 +200,6 @@ steps_per_eval_all_images: 30000
 steps_per_eval_batch: 500
 steps_per_eval_image: 500
 steps_per_save: 2000
-timestamp: 2023-09-18_200215
 use_grad_scaler: false
 viewer: !!python/object:nerfstudio.configs.base_config.ViewerConfig
   image_format: jpeg
