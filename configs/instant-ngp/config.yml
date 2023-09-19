@@ -165,7 +165,7 @@ viewer: !!python/object:nerfstudio.configs.base_config.ViewerConfig
   jpeg_quality: 90
   max_num_display_images: 512
   num_rays_per_chunk: 4096
-  quit_on_train_completion: True
+  quit_on_train_completion: true
   relative_log_filename: viewer_log_filename.txt
   websocket_host: 0.0.0.0
   websocket_port: null
