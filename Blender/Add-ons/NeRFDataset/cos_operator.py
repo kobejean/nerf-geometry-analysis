@@ -33,12 +33,17 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
         
         if scene.camera_layout_mode == "sphere":
             helper.create_sphere_camera_points(scene)
+        elif scene.camera_layout_mode == "hemisphere":
+            helper.create_hemisphere_camera_points(scene)
         elif scene.camera_layout_mode == "circle":
             helper.create_circle_camera_points(scene)
         elif scene.camera_layout_mode == "stereo":
             helper.create_stereo_camera_points(scene)
 
+        helper.setup_depth_map_rendering()
+
         output_data = self.get_camera_intrinsics(scene, camera)
+        depth_map_file_output = helper.find_tagged_nodes(scene.node_tree, "depth_map_file_output")[0]
 
         # clean directory name (unsupported characters replaced) and output path
         output_dir = bpy.path.clean_name(scene.cos_dataset_name)
@@ -79,6 +84,7 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
                 os.makedirs(output_test, exist_ok=True)
                 scene.rendering = True
                 scene.render.filepath = os.path.join(output_test, '') # test frames path
+                depth_map_file_output.base_path = output_test
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1
@@ -99,6 +105,7 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
                 os.makedirs(output_val, exist_ok=True)
                 scene.rendering = True
                 scene.render.filepath = os.path.join(output_val, '') # validation frames path
+                depth_map_file_output.base_path = output_val
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1
@@ -118,6 +125,7 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
                 os.makedirs(output_train, exist_ok=True)
                 scene.rendering = True
                 scene.render.filepath = os.path.join(output_train, '') # training frames path
+                depth_map_file_output.base_path = output_train
                 bpy.ops.render.render('EXEC_DEFAULT', animation=True, write_still=True) # render scene
 
             scene.frame_start = scene.frame_end + 1

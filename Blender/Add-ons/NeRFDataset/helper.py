@@ -58,6 +58,65 @@ def create_sphere_camera_points(scene):
             item.vector = point
 
 
+
+def golden_spiral_points(N, phi_range=(0, math.pi / 2)):
+    phi = math.pi * (3.0 - math.sqrt(5.0))
+    points = []
+    
+    for i in range(N):
+        index = float(i) + 0.5
+        z = 1 - (index / N)  # z goes from 1 to 0
+        radius = math.sqrt(1 - z * z)
+        theta = phi * index
+        
+        x = math.cos(theta) * radius
+        y = math.sin(theta) * radius
+        points.append((x, y, z))
+        
+    return points
+
+
+
+def create_hemisphere_camera_points(scene):
+    num_test = scene.cos_nb_test_frames if scene.test_data else 0
+    num_val = scene.cos_nb_val_frames if scene.val_data else 0
+    num_train = scene.cos_nb_train_frames if scene.train_data else 0
+    
+    total = num_test + num_val + num_train
+
+    all_points = golden_spiral_points(total)
+    random.Random(42).shuffle(all_points)
+
+    # Split points into test, val, and train datasets
+    test_points = all_points[:num_test]
+    val_points = all_points[num_test:num_test + num_val]
+    train_points = all_points[num_test + num_val:]
+
+    # Clear previous points
+    scene.test_points.clear()
+    scene.val_points.clear()
+    scene.train_points.clear()
+
+    # Function to add points to scene
+    def add_points_to_scene(points, scene_points):
+        for unit_x, unit_y, unit_z in points:
+            unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+            # Ellipsoid sample : center + rotation @ radius * unit sphere
+            point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+            rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+            point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+            # Add point
+            item = scene_points.add()
+            item.vector = point
+
+    add_points_to_scene(test_points, scene.test_points)
+    add_points_to_scene(val_points, scene.val_points)
+    add_points_to_scene(train_points, scene.train_points)
+
+
+
 def create_circle_camera_points(scene):
     num_test = scene.cos_nb_test_frames if scene.test_data else 0
     num_val = scene.cos_nb_val_frames if scene.val_data else 0
@@ -409,3 +468,45 @@ def set_init_props(scene):
 def cos_camera_update(scene):
     if CAMERA_NAME in scene.objects.keys():
         scene.objects[CAMERA_NAME].location = sample_point(scene)
+
+def find_tagged_nodes(node_tree, tag_value):
+    tagged_nodes = []
+    for node in node_tree.nodes:
+        if "tag" in node.keys() and node["tag"] == tag_value:
+            tagged_nodes.append(node)
+    return tagged_nodes
+
+
+def setup_depth_map_rendering():
+    print("setup_depth_map_rendering")
+    bpy.context.view_layer.use_pass_z = True
+
+    links = None
+    needs_setup = not bpy.context.scene.use_nodes
+
+    # Enable Node Usage for the Scene
+    bpy.context.scene.use_nodes = True
+    tree = bpy.context.scene.node_tree
+    links = tree.links
+
+    # If we have already setup then return
+    if find_tagged_nodes(tree, "depth_map_file_output"):
+        return
+
+
+    # Add New Nodes for Depth Map
+    render_layers = tree.nodes.new('CompositorNodeRLayers')
+
+    # Add File Output Node
+    file_output = tree.nodes.new('CompositorNodeOutputFile')
+    file_output.format.file_format = 'OPEN_EXR'
+    file_output.format.color_depth = '32'
+    file_output.file_slots[0].path = "depth_####"
+    file_output["tag"] = "depth_map_file_output"
+
+    if needs_setup:
+        composite = tree.nodes.new('CompositorNodeComposite')
+        links.new(render_layers.outputs['Image'], composite.inputs['Image'])
+
+    # Link Nodes
+    links.new(render_layers.outputs['Depth'], file_output.inputs[0])
