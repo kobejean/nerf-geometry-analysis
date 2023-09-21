@@ -144,7 +144,7 @@ def create_stereo_camera_points(scene):
     scene.val_points.clear()
     scene.train_points.clear()        
     
-    phi = math.pi / 3
+    phi = 5 * math.pi / 12
 
     for i in range(num_test):
         theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
@@ -182,27 +182,38 @@ def create_stereo_camera_points(scene):
         item = scene.val_points.add()
         item.vector = point
 
-    
-    for i in range(num_train):
-        theta = 2 * math.pi * float(i % num_train) / num_train 
+    theta_1 = 2 * math.pi * 0.0125
 
-        # sample from unit sphere, given theta and phi
-        unit_x = math.cos(theta) * math.sin(phi)
-        unit_y = math.sin(theta) * math.sin(phi)
-        unit_z = math.cos(phi)
-        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+    # sample from unit sphere, given theta and phi
+    unit_x_1 = math.cos(theta_1) * math.sin(phi)
+    unit_y_1 = math.sin(theta_1) * math.sin(phi)
+    unit_z = math.cos(phi)
+    unit_1 = mathutils.Vector((unit_x_1, unit_y_1, unit_z))
 
-        # ellipsoid sample : center + rotation @ radius * unit sphere
-        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
-        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
-        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+    # ellipsoid sample : center + rotation @ radius * unit sphere
+    point_1 = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit_1
+    rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+    point_1 = mathutils.Vector(scene.sphere_location) + rotation @ point_1
 
-        # add point
-        item = scene.train_points.add()
-        item.vector = point
+    # add point
+    item = scene.train_points.add()
+    item.vector = point_1
 
+    # sample from unit sphere, given theta and phi
+    unit_x_2 = math.cos(theta_1) * math.sin(phi)
+    unit_y_2 = - math.sin(theta_1) * math.sin(phi)
+    unit_z = math.cos(phi)
+    unit_2 = mathutils.Vector((unit_x_2, unit_y_2, unit_z))
 
+    # ellipsoid sample : center + rotation @ radius * unit sphere
+    point_2 = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit_2
+    rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+    point_2 = mathutils.Vector(scene.sphere_location) + rotation @ point_2
 
+    # add point
+    item = scene.train_points.add()
+    item.vector = point_2
+        
 ## property poll and update functions
 
 # camera pointer property poll function
