@@ -496,6 +496,7 @@ def setup_depth_map_rendering():
 
     # Add New Nodes for Depth Map
     render_layers = tree.nodes.new('CompositorNodeRLayers')
+    render_layers.use_alpha = True
 
     # Add File Output Node
     file_output = tree.nodes.new('CompositorNodeOutputFile')
