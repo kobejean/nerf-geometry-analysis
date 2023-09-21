@@ -84,13 +84,13 @@ def create_hemisphere_camera_points(scene):
     
     total = num_test + num_val + num_train
 
-    all_points = golden_spiral_points(total)
+    all_points = list(enumerate(golden_spiral_points(total)))
     random.Random(42).shuffle(all_points)
 
     # Split points into test, val, and train datasets
-    test_points = all_points[:num_test]
-    val_points = all_points[num_test:num_test + num_val]
-    train_points = all_points[num_test + num_val:]
+    test_points = sorted(all_points[:num_test])
+    val_points = sorted(all_points[num_test:num_test + num_val])
+    train_points = sorted(all_points[num_test + num_val:])
 
     # Clear previous points
     scene.test_points.clear()
@@ -99,7 +99,8 @@ def create_hemisphere_camera_points(scene):
 
     # Function to add points to scene
     def add_points_to_scene(points, scene_points):
-        for unit_x, unit_y, unit_z in points:
+        for i, point in points:
+            unit_x, unit_y, unit_z = point
             unit = mathutils.Vector((unit_x, unit_y, unit_z))
 
             # Ellipsoid sample : center + rotation @ radius * unit sphere
