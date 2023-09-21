@@ -26,10 +26,10 @@ def convert_to_transformed_space(x, dataparser_transforms_data):
     x *= dataparser_scale
     return x
 
-def plane_eval_ray_bundle(dataparser_transforms_data, sampling_width, n = 1001):
+def plane_eval_ray_bundle(dataparser_transforms_data, sampling_width, dimensions=(1.0,1.0), n = 1001):
     dataparser_scale = dataparser_transforms_data["scale"]
-    x = torch.linspace(-0.5, 0.5, n)
-    y = torch.linspace(-0.5, 0.5, n)
+    x = torch.linspace(-0.5*dimensions[0], 0.5*dimensions[0], n)
+    y = torch.linspace(-0.5*dimensions[1], 0.5*dimensions[1], n)
     z = sampling_width
     grid_x, grid_y = torch.meshgrid(x, y)
     origins = torch.stack([grid_x, grid_y, z * torch.ones([n, n])], dim=-1)
