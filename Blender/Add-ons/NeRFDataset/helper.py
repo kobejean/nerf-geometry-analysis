@@ -272,7 +272,73 @@ def create_stereo_camera_points(scene):
     # add point
     item = scene.train_points.add()
     item.vector = point_2
-        
+
+def create_line_camera_points(scene):
+    num_test = scene.cos_nb_test_frames if scene.test_data else 0
+    num_val = scene.cos_nb_val_frames if scene.val_data else 0
+    num_train = scene.cos_nb_train_frames if scene.train_data else 0
+    
+    total = num_test + num_val + num_train
+    segments = num_test + num_val
+
+    # calculate angles
+
+    scene.test_points.clear()
+    scene.val_points.clear()
+    scene.train_points.clear()        
+    
+    phi = 5 * math.pi / 12
+
+    for i in range(num_test):
+        theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
+
+        # sample from unit sphere, given theta and phi
+        unit_x = math.cos(theta) * math.sin(phi)
+        unit_y = math.sin(theta) * math.sin(phi)
+        unit_z = math.cos(phi)
+        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+        # ellipsoid sample : center + rotation @ radius * unit sphere
+        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+        # add point
+        item = scene.test_points.add()
+        item.vector = point
+
+    for i in range(num_val):
+        theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
+
+        # sample from unit sphere, given theta and phi
+        unit_x = math.cos(theta) * math.sin(phi)
+        unit_y = math.sin(theta) * math.sin(phi)
+        unit_z = math.cos(phi)
+        unit = mathutils.Vector((unit_x, unit_y, unit_z))
+
+        # ellipsoid sample : center + rotation @ radius * unit sphere
+        point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
+        rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
+        point = mathutils.Vector(scene.sphere_location) + rotation @ point
+
+        # add point
+        item = scene.val_points.add()
+        item.vector = point
+
+    start_x = -scene.sphere_radius
+    fixed_z = 1.5
+    sampling_interval = 0.5
+
+    for i in range(num_train):
+        x = start_x + i * sampling_interval 
+        y = 0
+        z = fixed_z  
+
+        point = mathutils.Vector((x, y, z))
+
+        # add point
+        item = scene.train_points.add()
+        item.vector = point
 ## property poll and update functions
 
 # camera pointer property poll function
