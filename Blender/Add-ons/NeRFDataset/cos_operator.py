@@ -39,6 +39,8 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
             helper.create_circle_camera_points(scene)
         elif scene.camera_layout_mode == "stereo":
             helper.create_stereo_camera_points(scene)
+        elif scene.camera_layout_mode == "line":
+            helper.create_line_camera_points(scene)
 
         helper.setup_depth_map_rendering()
 

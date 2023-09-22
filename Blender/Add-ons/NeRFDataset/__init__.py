@@ -52,7 +52,9 @@ PROPS = [
             ("sphere", "Sphere", "Layout cameras in a spherical arrangement"),
             ("hemisphere", "Hemisphere", "Layout cameras in a hemispherical arrangement"),
             ("circle", "Circle", "Layout cameras in a circular arrangement"),
-            ("stereo", "Stereo", "Layout cameras for stereo vision")
+            ("stereo", "Stereo", "Layout cameras for stereo vision"),
+            ("line", "Line", "Layout cameras along a line"),
+
         ],
         name="Camera Layout Mode",
         description="Choose the camera layout mode",
