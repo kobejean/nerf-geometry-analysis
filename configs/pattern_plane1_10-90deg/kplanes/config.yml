@@ -7,8 +7,8 @@ data: &id003 !!python/object/apply:pathlib.PosixPath
 - Datasets
 - NeRF
 - nerf-geometry-analysis
-- pattern_plane1_720x480
-experiment_name: pattern_plane1_720x480
+- pattern_plane1_10-90deg
+experiment_name: pattern_plane1_10-90deg
 gradient_accumulation_steps: 1
 load_checkpoint: null
 load_config: null
@@ -142,12 +142,12 @@ pipeline: !!python/object:nerfstudio.pipelines.base_pipeline.VanillaPipelineConf
     appearance_embedding_dim: 0
     background_color: random
     collider_params:
-      far_plane: 6.0
-      near_plane: 2.0
+      far_plane: 1000.0
+      near_plane: 0.05
     concat_features_across_scales: true
-    enable_collider: true
+    enable_collider: false
     eval_num_rays_per_chunk: 32768
-    far_plane: 6.0
+    far_plane: 1000.0
     grid_base_resolution:
     - 128
     - 128
@@ -165,7 +165,7 @@ pipeline: !!python/object:nerfstudio.pipelines.base_pipeline.VanillaPipelineConf
     - 1
     - 2
     - 4
-    near_plane: 2.0
+    near_plane: 0.05
     num_proposal_iterations: 2
     num_proposal_samples: !!python/tuple
     - 256

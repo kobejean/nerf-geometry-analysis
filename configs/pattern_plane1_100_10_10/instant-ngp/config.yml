@@ -7,8 +7,8 @@ data: &id003 !!python/object/apply:pathlib.PosixPath
 - Datasets
 - NeRF
 - nerf-geometry-analysis
-- pattern_plane1_720x480
-experiment_name: pattern_plane1_720x480
+- pattern_plane1_100_10_10
+experiment_name: pattern_plane1_100_10_10
 gradient_accumulation_steps: 1
 load_checkpoint: null
 load_config: null
@@ -74,10 +74,10 @@ pipeline: !!python/object:nerfstudio.pipelines.dynamic_batch.DynamicBatchPipelin
       mode: 'off'
       optimizer: !!python/object:nerfstudio.engine.optimizers.AdamOptimizerConfig
         _target: *id001
-        eps: 1.0e-15
+        eps: 1.0e-08
         lr: 0.0006
         max_norm: null
-        weight_decay: 0
+        weight_decay: 0.01
       orientation_noise_std: 0.0
       param_group: camera_opt
       position_noise_std: 0.0
@@ -95,14 +95,7 @@ pipeline: !!python/object:nerfstudio.pipelines.dynamic_batch.DynamicBatchPipelin
       _target: !!python/name:nerfstudio.data.dataparsers.nerfstudio_dataparser.Nerfstudio ''
       auto_scale_poses: true
       center_method: poses
-      data: !!python/object/apply:pathlib.PosixPath
-      - /
-      - home
-      - ccl
-      - Datasets
-      - NeRF
-      - nerf-geometry-analysis
-      - pattern_plane1_720x480
+      data: *id003
       depth_unit_scale_factor: 0.001
       downscale_factor: null
       eval_interval: 8
@@ -132,13 +125,15 @@ pipeline: !!python/object:nerfstudio.pipelines.dynamic_batch.DynamicBatchPipelin
     _target: !!python/name:nerfstudio.models.instant_ngp.NGPModel ''
     alpha_thre: 0.01
     background_color: random
-    collider_params: null
+    collider_params:
+      far_plane: 1000.0
+      near_plane: 0.05
     cone_angle: 0.004
     disable_scene_contraction: false
     enable_collider: false
     eval_num_rays_per_chunk: 8192
     far_plane: 1000.0
-    grid_levels: 4
+    grid_levels: 3
     grid_resolution: 128
     log2_hashmap_size: 19
     loss_coefficients:
@@ -170,4 +165,4 @@ viewer: !!python/object:nerfstudio.configs.base_config.ViewerConfig
   websocket_host: 0.0.0.0
   websocket_port: null
   websocket_port_default: 7007
-vis: tensorboard
+vis: viewer

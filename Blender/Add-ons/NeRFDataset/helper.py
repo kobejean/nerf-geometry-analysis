@@ -20,8 +20,8 @@ def create_sphere_camera_points(scene):
     segments = num_test + num_val
 
     # calculate angles
-    max_altitude = scene.min_altitude * math.pi / 180
-    min_altitude = scene.max_altitude * math.pi / 180
+    min_altitude = scene.min_altitude * math.pi / 180
+    max_altitude = scene.max_altitude * math.pi / 180
     spread_altitude = max_altitude - min_altitude
     rings = scene.cos_nb_train_frames // segments
 
@@ -33,7 +33,8 @@ def create_sphere_camera_points(scene):
     scene.train_points.clear()
     for i in range(total):
         theta = 2 * math.pi * float(i % segments) / segments 
-        altitude = min_altitude + spread_altitude * (1 - float(i // segments) / rings)
+        altitude = max_altitude - spread_altitude * float(i // segments) / rings
+        print("altitude", altitude)
         phi = math.pi/2 - altitude
 
         # sample from unit sphere, given theta and phi
@@ -62,10 +63,14 @@ def create_sphere_camera_points(scene):
 def golden_spiral_points(N, phi_range=(0, math.pi / 2)):
     phi = math.pi * (3.0 - math.sqrt(5.0))
     points = []
+    max_z = math.cos(phi_range[0])
+    min_z = math.cos(phi_range[1])
+    z_spread = max_z - min_z
     
     for i in range(N):
-        index = float(i) + 0.5
-        z = 1 - (index / N)  # z goes from 1 to 0
+        index = float(i)
+        z = max_z - (index / (N-1)) * z_spread  # z goes from 1 to 0
+        print("z", z)
         radius = math.sqrt(1 - z * z)
         theta = phi * index
         
@@ -84,7 +89,13 @@ def create_hemisphere_camera_points(scene):
     
     total = num_test + num_val + num_train
 
-    all_points = list(enumerate(golden_spiral_points(total)))
+
+    min_altitude = scene.min_altitude * math.pi / 180
+    max_altitude = scene.max_altitude * math.pi / 180
+    min_phi = math.pi / 2 - max_altitude
+    max_phi = math.pi / 2 - min_altitude
+    
+    all_points = list(enumerate(golden_spiral_points(total, phi_range = (min_phi, max_phi))))
     random.Random(42).shuffle(all_points)
 
     # Split points into test, val, and train datasets
@@ -96,6 +107,8 @@ def create_hemisphere_camera_points(scene):
     scene.test_points.clear()
     scene.val_points.clear()
     scene.train_points.clear()
+
+
 
     # Function to add points to scene
     def add_points_to_scene(points, scene_points):
