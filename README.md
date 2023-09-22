@@ -1,6 +1,7 @@
 ## Install Deps
 ```
 sudo apt install libopenexr-dev zlib1g-dev
+pip install git+https://github.com/kobejean/nerfstudio
 pip install git+https://github.com/jamesbowman/openexrpython.git
 pip install git+https://github.com/kobejean/kplanes_nerfstudio.git
 ```
@@ -33,7 +34,8 @@ On macOS/Linux: ln -s Target Link
 
 linux:
 ```
-ln -s ~/Code/nerf-geometry-analysis/Blender/Add-ons/NeRFDataset ~/.config/blender/3.0/scripts/addons/NeRFDataset
+mkdir -p ~/.config/blender/3.6/scripts/addons
+ln -s ~/Code/nerf-geometry-analysis/Blender/Add-ons/NeRFDataset ~/.config/blender/3.6/scripts/addons/NeRFDataset
 ```
 
 macOS:
