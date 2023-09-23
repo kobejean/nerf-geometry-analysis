@@ -1,5 +1,6 @@
 import bpy
 from . import helper, blender_nerf_ui, cos_ui, cos_operator
+import mathutils
 
 
 # blender info
@@ -21,6 +22,32 @@ VERSION = '.'.join(str(x) for x in bl_info['version'])
 
 class VectorPropertyGroup(bpy.types.PropertyGroup):
     vector: bpy.props.FloatVectorProperty(size=3)
+
+class MatrixPropertyGroup(bpy.types.PropertyGroup):
+    m00: bpy.props.FloatProperty(name="M00")
+    m01: bpy.props.FloatProperty(name="M01")
+    m02: bpy.props.FloatProperty(name="M02")
+    
+    m10: bpy.props.FloatProperty(name="M10")
+    m11: bpy.props.FloatProperty(name="M11")
+    m12: bpy.props.FloatProperty(name="M12")
+    
+    m20: bpy.props.FloatProperty(name="M20")
+    m21: bpy.props.FloatProperty(name="M21")
+    m22: bpy.props.FloatProperty(name="M22")
+
+def to_mathutils_matrix(matrix_prop_group):
+    mat = mathutils.Matrix()
+    mat[0][0], mat[0][1], mat[0][2] = matrix_prop_group.m00, matrix_prop_group.m01, matrix_prop_group.m02
+    mat[1][0], mat[1][1], mat[1][2] = matrix_prop_group.m10, matrix_prop_group.m11, matrix_prop_group.m12
+    mat[2][0], mat[2][1], mat[2][2] = matrix_prop_group.m20, matrix_prop_group.m21, matrix_prop_group.m22
+    return mat
+
+def from_mathutils_matrix(mat, matrix_prop_group):
+    matrix_prop_group.m00, matrix_prop_group.m01, matrix_prop_group.m02 = mat[0][0], mat[0][1], mat[0][2]
+    matrix_prop_group.m10, matrix_prop_group.m11, matrix_prop_group.m12 = mat[1][0], mat[1][1], mat[1][2]
+    matrix_prop_group.m20, matrix_prop_group.m21, matrix_prop_group.m22 = mat[2][0], mat[2][1], mat[2][2]
+
 
 bpy.utils.register_class(VectorPropertyGroup)
 
@@ -87,6 +114,9 @@ PROPS = [
     ('test_points', bpy.props.CollectionProperty(type=VectorPropertyGroup, name='Test Points') ),
     ('val_points', bpy.props.CollectionProperty(type=VectorPropertyGroup, name='Val Points') ),
     ('train_points', bpy.props.CollectionProperty(type=VectorPropertyGroup, name='Train Points') ),
+    ('test_rotations', bpy.props.CollectionProperty(type=MatrixPropertyGroup, name='Test Rotation Matrices') ),
+    ('val_rotations', bpy.props.CollectionProperty(type=MatrixPropertyGroup, name='Val Rotation Matrices') ),
+    ('train_rotations', bpy.props.CollectionProperty(type=MatrixPropertyGroup, name='Train Rotation Matrices') ),
 
 ]
 

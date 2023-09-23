@@ -11,6 +11,9 @@ from bpy.app.handlers import persistent
 EMPTY_NAME = 'NeRFDataset Sphere'
 CAMERA_NAME = 'NeRFDataset Camera'
 
+def direction_vector_to_rotation_matrix(direction_vector):
+    return direction_vector.to_track_quat('Z', 'Y').to_matrix()
+
 def create_sphere_camera_points(scene):
     num_test = scene.cos_nb_test_frames if scene.test_data else 0
     num_val = scene.cos_nb_val_frames if scene.val_data else 0
@@ -25,12 +28,12 @@ def create_sphere_camera_points(scene):
     spread_altitude = max_altitude - min_altitude
     rings = scene.cos_nb_train_frames // segments
 
-    test = []
-    val = []
-    train = []
     scene.test_points.clear()
     scene.val_points.clear()
     scene.train_points.clear()
+    scene.test_rotations.clear()
+    scene.val_rotations.clear()
+    scene.train_rotations.clear()
     for i in range(total):
         theta = 2 * math.pi * float(i % segments) / segments 
         altitude = max_altitude - spread_altitude * float(i // segments) / rings
@@ -47,16 +50,24 @@ def create_sphere_camera_points(scene):
         point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
         rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
+        direction = -point.normalized()
+        rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         if i < num_test:
-            item = scene.test_points.add()
-            item.vector = point
+            point_prop = scene.test_points.add()
+            point_prop.vector = point
+            rotation_prop = scene.test_rotations.add()
+            rotation_prop.from_mathutils_matrix(rot_matrix)
         elif i < num_test + num_val:
-            item = scene.val_points.add()
-            item.vector = point
+            point_prop = scene.val_points.add()
+            point_prop.vector = point
+            rotation_prop = scene.val_rotations.add()
+            rotation_prop.from_mathutils_matrix(rot_matrix)
         else:
-            item = scene.train_points.add()
-            item.vector = point
+            point_prop = scene.train_points.add()
+            point_prop.vector = point
+            rotation_prop = scene.train_rotations.add()
+            rotation_prop.from_mathutils_matrix(rot_matrix)
 
 
 
@@ -111,7 +122,7 @@ def create_hemisphere_camera_points(scene):
 
 
     # Function to add points to scene
-    def add_points_to_scene(points, scene_points):
+    def add_points_to_scene(points, scene_points, scene_rotations):
         for i, point in points:
             unit_x, unit_y, unit_z = point
             unit = mathutils.Vector((unit_x, unit_y, unit_z))
@@ -120,14 +131,20 @@ def create_hemisphere_camera_points(scene):
             point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
             rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
             point = mathutils.Vector(scene.sphere_location) + rotation @ point
+            direction = -point.normalized()
+            rot_matrix = direction_vector_to_rotation_matrix(direction)
 
             # Add point
-            item = scene_points.add()
-            item.vector = point
+            point_prop = scene_points.add()
+            point_prop.vector = point
 
-    add_points_to_scene(test_points, scene.test_points)
-    add_points_to_scene(val_points, scene.val_points)
-    add_points_to_scene(train_points, scene.train_points)
+            # Add rotation
+            rotation_prop = scene_rotations.add()
+            rotation_prop.from_mathutils_matrix(rot_matrix)
+
+    add_points_to_scene(test_points, scene.test_points, scene.test_rotations)
+    add_points_to_scene(val_points, scene.val_points, scene.val_rotations)
+    add_points_to_scene(train_points, scene.train_points, scene.train_rotations)
 
 
 
@@ -160,10 +177,16 @@ def create_circle_camera_points(scene):
         point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
         rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
+        direction = -point.normalized()
+        rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         # add point
-        item = scene.test_points.add()
-        item.vector = point
+        point_prop = scene.test_points.add()
+        point_prop.vector = point
+
+        # add rotation
+        rotation_prop = scene.test_rotations.add()
+        rotation_prop.from_mathutils_matrix(rot_matrix)
 
     for i in range(num_val):
         theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
@@ -178,10 +201,16 @@ def create_circle_camera_points(scene):
         point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
         rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
+        direction = -point.normalized()
+        rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         # add point
-        item = scene.val_points.add()
-        item.vector = point
+        point_prop = scene.val_points.add()
+        point_prop.vector = point
+
+        # add rotation
+        rotation_prop = scene.val_rotations.add()
+        rotation_prop.from_mathutils_matrix(rot_matrix)
 
     
     for i in range(num_train):
@@ -197,10 +226,16 @@ def create_circle_camera_points(scene):
         point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
         rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
+        direction = -point.normalized()
+        rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         # add point
-        item = scene.train_points.add()
-        item.vector = point
+        point_prop = scene.train_points.add()
+        point_prop.vector = point
+
+        # add rotation
+        rotation_prop = scene.train_rotations.add()
+        rotation_prop.from_mathutils_matrix(rot_matrix)
 
 
 def create_stereo_camera_points(scene):
@@ -232,10 +267,16 @@ def create_stereo_camera_points(scene):
         point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
         rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
+        direction = -point.normalized()
+        rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         # add point
-        item = scene.test_points.add()
-        item.vector = point
+        point_prop = scene.test_points.add()
+        point_prop.vector = point
+
+        # add rotation
+        rotation_prop = scene.test_rotations.add()
+        rotation_prop.from_mathutils_matrix(rot_matrix)
 
     for i in range(num_val):
         theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
@@ -250,10 +291,16 @@ def create_stereo_camera_points(scene):
         point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
         rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
+        direction = -point.normalized()
+        rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         # add point
-        item = scene.val_points.add()
-        item.vector = point
+        point_prop = scene.val_points.add()
+        point_prop.vector = point
+
+        # add rotation
+        rotation_prop = scene.val_rotations.add()
+        rotation_prop.from_mathutils_matrix(rot_matrix)
 
     theta_1 = 2 * math.pi * 0.0125
 
@@ -267,10 +314,16 @@ def create_stereo_camera_points(scene):
     point_1 = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit_1
     rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
     point_1 = mathutils.Vector(scene.sphere_location) + rotation @ point_1
+    direction_1 = -point_1.normalized()
+    rot_matrix_1 = direction_vector_to_rotation_matrix(direction_1)
 
     # add point
-    item = scene.train_points.add()
-    item.vector = point_1
+    point_prop = scene.train_points.add()
+    point_prop.vector = point_1
+
+    # add rotation
+    rotation_prop = scene.train_rotations.add()
+    rotation_prop.from_mathutils_matrix(rot_matrix_1)
 
     # sample from unit sphere, given theta and phi
     unit_x_2 = math.cos(theta_1) * math.sin(phi)
@@ -282,10 +335,16 @@ def create_stereo_camera_points(scene):
     point_2 = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit_2
     rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
     point_2 = mathutils.Vector(scene.sphere_location) + rotation @ point_2
+    direction_2 = -point_2.normalized()
+    rot_matrix_2 = direction_vector_to_rotation_matrix(direction_2)
 
     # add point
-    item = scene.train_points.add()
-    item.vector = point_2
+    point_prop = scene.train_points.add()
+    point_prop.vector = point_2
+
+    # add rotation
+    rotation_prop = scene.train_rotations.add()
+    rotation_prop.from_mathutils_matrix(rot_matrix_2)
 
 def create_line_camera_points(scene):
     num_test = scene.cos_nb_test_frames if scene.test_data else 0
@@ -318,8 +377,8 @@ def create_line_camera_points(scene):
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
 
         # add point
-        item = scene.test_points.add()
-        item.vector = point
+        point_prop = scene.test_points.add()
+        point_prop.vector = point
 
     for i in range(num_val):
         theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
@@ -336,8 +395,8 @@ def create_line_camera_points(scene):
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
 
         # add point
-        item = scene.val_points.add()
-        item.vector = point
+        point_prop = scene.val_points.add()
+        point_prop.vector = point
 
     start_x = -scene.sphere_radius
     fixed_z = 1.5
@@ -351,8 +410,8 @@ def create_line_camera_points(scene):
         point = mathutils.Vector((x, y, z))
 
         # add point
-        item = scene.train_points.add()
-        item.vector = point
+        point_prop = scene.train_points.add()
+        point_prop.vector = point
 ## property poll and update functions
 
 # camera pointer property poll function
@@ -424,13 +483,11 @@ def delete_camera(scene, name):
     for block in bpy.data.cameras:
         if name in block.name:
             bpy.data.cameras.remove(block)
-
-# non uniform sampling when stretched or squeezed sphere
+            
 def sample_point(scene):
     num_test = scene.cos_nb_test_frames if scene.test_data else 0
     num_val = scene.cos_nb_val_frames if scene.val_data else 0
     num_train = scene.cos_nb_train_frames if scene.train_data else 0
-    print(scene.frame_current)
 
     if scene.frame_current < num_test:
         i = scene.frame_current
@@ -441,7 +498,21 @@ def sample_point(scene):
     else:
         i = scene.frame_current - num_test - num_val
         return scene.train_points[i].vector
+    
+def sample_direction(scene):
+    num_test = scene.cos_nb_test_frames if scene.test_data else 0
+    num_val = scene.cos_nb_val_frames if scene.val_data else 0
+    num_train = scene.cos_nb_train_frames if scene.train_data else 0
 
+    if scene.frame_current < num_test:
+        i = scene.frame_current
+        return scene.test_rotations[i].vector
+    elif scene.frame_current < num_test + num_val:
+        i = scene.frame_current - num_test
+        return scene.val_rotations[i].vector
+    else:
+        i = scene.frame_current - num_test - num_val
+        return scene.train_rotations[i].vector
 ## two way property link between sphere and ui (property and handler functions)
 # https://blender.stackexchange.com/questions/261174/2-way-property-link-or-a-filtered-property-display
 
