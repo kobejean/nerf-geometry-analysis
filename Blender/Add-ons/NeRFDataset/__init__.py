@@ -36,20 +36,21 @@ class MatrixPropertyGroup(bpy.types.PropertyGroup):
     m21: bpy.props.FloatProperty(name="M21")
     m22: bpy.props.FloatProperty(name="M22")
 
-def to_mathutils_matrix(matrix_prop_group):
-    mat = mathutils.Matrix()
-    mat[0][0], mat[0][1], mat[0][2] = matrix_prop_group.m00, matrix_prop_group.m01, matrix_prop_group.m02
-    mat[1][0], mat[1][1], mat[1][2] = matrix_prop_group.m10, matrix_prop_group.m11, matrix_prop_group.m12
-    mat[2][0], mat[2][1], mat[2][2] = matrix_prop_group.m20, matrix_prop_group.m21, matrix_prop_group.m22
-    return mat
+    def to_mathutils_matrix(self):
+        mat = mathutils.Matrix()
+        mat[0][0], mat[0][1], mat[0][2] = self.m00, self.m01, self.m02
+        mat[1][0], mat[1][1], mat[1][2] = self.m10, self.m11, self.m12
+        mat[2][0], mat[2][1], mat[2][2] = self.m20, self.m21, self.m22
+        return mat
 
-def from_mathutils_matrix(mat, matrix_prop_group):
-    matrix_prop_group.m00, matrix_prop_group.m01, matrix_prop_group.m02 = mat[0][0], mat[0][1], mat[0][2]
-    matrix_prop_group.m10, matrix_prop_group.m11, matrix_prop_group.m12 = mat[1][0], mat[1][1], mat[1][2]
-    matrix_prop_group.m20, matrix_prop_group.m21, matrix_prop_group.m22 = mat[2][0], mat[2][1], mat[2][2]
+    def from_mathutils_matrix(self, mat):
+        self.m00, self.m01, self.m02 = mat[0][0], mat[0][1], mat[0][2]
+        self.m10, self.m11, self.m12 = mat[1][0], mat[1][1], mat[1][2]
+        self.m20, self.m21, self.m22 = mat[2][0], mat[2][1], mat[2][2]
 
 
 bpy.utils.register_class(VectorPropertyGroup)
+bpy.utils.register_class(MatrixPropertyGroup)
 
 
 # addon blender properties

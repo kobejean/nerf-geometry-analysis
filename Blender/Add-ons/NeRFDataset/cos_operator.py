@@ -31,6 +31,12 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
            self.report({'ERROR'}, error_messages[0])
            return {'FINISHED'}
         
+
+        # Find and remove the "Track To" constraint
+        if 'Track To' in camera.constraints:
+            track_to_constraint = camera.constraints['Track To']
+            camera.constraints.remove(track_to_constraint)
+        
         if scene.camera_layout_mode == "sphere":
             helper.create_sphere_camera_points(scene)
         elif scene.camera_layout_mode == "hemisphere":
