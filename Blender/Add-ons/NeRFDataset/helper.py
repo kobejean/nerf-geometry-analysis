@@ -423,7 +423,7 @@ def create_line_camera_points(scene):
         point_prop.vector = point
 
         # add rotation
-        rotation_prop = scene.test_rotations.add()
+        rotation_prop = scene.val_rotations.add()
         rotation_prop.from_mathutils_matrix(rot_matrix)
 
     start_x = -scene.sphere_radius
@@ -444,7 +444,7 @@ def create_line_camera_points(scene):
         point_prop.vector = point
 
         # add rotation
-        rotation_prop = scene.test_rotations.add()
+        rotation_prop = scene.train_rotations.add()
         rotation_prop.from_mathutils_matrix(rot_matrix)
 ## property poll and update functions
 
