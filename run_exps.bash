@@ -1,9 +1,10 @@
 DATASET_DIR=~/Datasets/NeRF/nerf-geometry-analysis
+DATASET="$1"
 # FAST_METHODS=("instant-ngp" "tensorf")
 # SLOW_METHODS=("vanilla-nerf" "neus" "mipnerf")
 # METHODS=("instant-ngp" "kplanes" "instant-ngp-bounded" "tensorf" "nerfacto")
 # METHODS=("tensorf" "instant-ngp" "kplanes" "instant-ngp-bounded" "nerfacto")
-METHODS=("tensorf" "instant-ngp-bounded" "nerfacto")
+METHODS=("tensorf" "instant-ngp" "nerfacto")
 # METHODS=("tensorf" "instant-ngp" "kplanes" "nerfacto")
 # DATASETS=($(ls -d "$DATASET_DIR"/*))
 DATASETS=("pattern_plane1" "checkered_plane" "black_line_bg_white" "black_square_bg_white")
@@ -23,7 +24,7 @@ DATASETS=("$DATASET_DIR/${DATASETS[@]}")
 # done
 
 for METHOD in "${METHODS[@]}"; do
-  DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1_hemisphere
+  # DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1_hemisphere
   echo "ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET"
   ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET
 done

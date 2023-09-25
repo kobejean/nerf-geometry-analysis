@@ -93,8 +93,82 @@ class NGAPipeline(VanillaPipeline):
         metrics_dict = {}
 
         self.eval()
+
         depth_filenames = self.datamanager.eval_dataset.metadata["depth_filenames"]
         method_name = self.model.__class__.__name__
+
+        sampling_width = 0.5
+        plane_dimensions=(1.0,1.0)
+
+        orig_near = self.model.config.near_plane
+        orig_far = self.model.config.far_plane
+        self.model.config.near_plane = 0
+        self.model.config.far_plane = 2*sampling_width*self.datamanager.train_dataparser_outputs.dataparser_scale
+        # camera_ray_bundle = plane_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, dimensions=plane_dimensions).to(self.device)
+        camera_ray_bundle = sphere_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, radius=0.5).to(self.device)
+        outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
+
+
+        rgb = outputs["rgb"]
+        rgb = torch.concat([rgb, outputs["accumulation"]], dim=-1)
+        depth = outputs["depth"] / self.datamanager.train_dataparser_outputs.dataparser_scale
+        mask = depth < 2 * sampling_width
+        # mask = torch.abs(depth - torch.mean(depth)) < 1 * torch.std(depth)
+        acc = colormaps.apply_colormap(outputs["accumulation"])
+        depth_vis = torch.clone(depth)
+        depth_vis[torch.logical_not(mask)] = torch.min(depth[mask]) if depth[mask].numel() > 0 else 0
+        depth_vis = colormaps.apply_depth_colormap(
+            depth_vis,
+            accumulation=outputs["accumulation"],
+        )
+        depth_vis = torch.concat([depth_vis, mask], dim=-1)
+        z = (sampling_width - depth).squeeze()
+
+        metrics_dict["max_z"] = float(torch.max(z)),
+        metrics_dict["min_z"] = float(torch.min(z)),
+        metrics_dict["std_z"] = float(torch.std(z)),
+        metrics_dict["mean_z"] = float(torch.mean(z)),
+        if output_path is not None:
+            save_as_image(rgb, output_path / "rgb.png")
+            save_as_image(acc, output_path / "acc.png")
+            save_as_image(depth_vis, output_path / "depth.png")
+            # save_weight_distribution_plot(output_path / f"weight_hist.png", outputs, [0, 2 * sampling_width], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = False)
+            save_weight_distribution_plot(output_path / f"weight_cfd.png", outputs, [0, 2 * sampling_width], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = True)
+
+
+            # Convert PyTorch tensor to NumPy array
+            z_numpy = z.cpu().numpy()
+            np.save(output_path / "z.npy", z_numpy)
+
+            # Create x and y coordinates for 1x1 xy-plane centered at origin
+            x = np.linspace(-plane_dimensions[0], plane_dimensions[0], 2001)
+            y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 1001)
+            # y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 1001)
+            x, y = np.meshgrid(x, y)
+
+            # Create the 3D plot
+            fig = plt.figure()
+            fig.suptitle(method_name)
+            ax = fig.add_subplot(111, projection='3d')
+            surface = ax.plot_surface(x, y, z_numpy, cmap='viridis')
+
+            # Labels and title
+            ax.set_xlabel('X')
+            ax.set_ylabel('Y')
+            ax.set_zlabel('Z')
+            ax.set_title('3D Surface Plot of Z')
+
+            # Function to update the plot at each frame
+            def update(frame):
+                ax.view_init(elev=20., azim=3.6*frame)
+                return surface,
+
+            # Create animation
+            ani = FuncAnimation(fig, update, frames=np.arange(0, 100), blit=False, repeat=False)
+
+            # To save the animation
+            ani.save(output_path / '3D_rotation.gif', writer='imagemagick')
+            plt.close(fig)
 
 
         def save_depth_vis(file_path, depth_gt, depth_pred, depth_diff, mask):
@@ -144,7 +218,11 @@ class NGAPipeline(VanillaPipeline):
         depth_d2 = np.zeros(num_images, np.float32)
         depth_d3 = np.zeros(num_images, np.float32)
 
-        for camera_ray_bundle, batch in []:#self.datamanager.fixed_indices_eval_dataloader:
+
+        self.model.config.near_plane = orig_near
+        self.model.config.far_plane = orig_far
+
+        for camera_ray_bundle, batch in self.datamanager.fixed_indices_eval_dataloader:
             image_idx = batch["image_idx"]
             depth_filepath = depth_filenames[image_idx]
             depth_gt = read_depth_map(str(depth_filepath), self.device)
@@ -215,76 +293,6 @@ class NGAPipeline(VanillaPipeline):
         metrics_dict["depth_d1"] = float(depth_d1.mean())
         metrics_dict["depth_d2"] = float(depth_d2.mean())
         metrics_dict["depth_d3"] = float(depth_d3.mean())
-
-        sampling_width = 0.5
-        plane_dimensions=(1.0,1.0)
-
-        self.model.config.near_plane = 0
-        self.model.config.far_plane = 2*sampling_width*self.datamanager.train_dataparser_outputs.dataparser_scale
-        # camera_ray_bundle = plane_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, dimensions=plane_dimensions).to(self.device)
-        camera_ray_bundle = sphere_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, radius=0.5).to(self.device)
-        outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
-
-
-        rgb = outputs["rgb"]
-        rgb = torch.concat([rgb, outputs["accumulation"]], dim=-1)
-        depth = outputs["depth"] / self.datamanager.train_dataparser_outputs.dataparser_scale
-        mask = depth < 2 * sampling_width
-        # mask = torch.abs(depth - torch.mean(depth)) < 1 * torch.std(depth)
-        acc = colormaps.apply_colormap(outputs["accumulation"])
-        depth_vis = torch.clone(depth)
-        depth_vis[torch.logical_not(mask)] = torch.min(depth[mask]) if depth[mask].numel() > 0 else 0
-        depth_vis = colormaps.apply_depth_colormap(
-            depth_vis,
-            accumulation=outputs["accumulation"],
-        )
-        depth_vis = torch.concat([depth_vis, mask], dim=-1)
-        z = (sampling_width - depth).squeeze()
-
-        metrics_dict["max_z"] = float(torch.max(z)),
-        metrics_dict["min_z"] = float(torch.min(z)),
-        metrics_dict["std_z"] = float(torch.std(z)),
-        metrics_dict["mean_z"] = float(torch.mean(z)),
-        if output_path is not None:
-            save_as_image(rgb, output_path / "rgb.png")
-            save_as_image(acc, output_path / "acc.png")
-            save_as_image(depth_vis, output_path / "depth.png")
-            # save_weight_distribution_plot(output_path / f"weight_hist.png", outputs, [0, 2 * sampling_width], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = False)
-            save_weight_distribution_plot(output_path / f"weight_cfd.png", outputs, [0, 2 * sampling_width], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = True)
-
-
-            # Convert PyTorch tensor to NumPy array
-            z_numpy = z.cpu().numpy()
-
-            # Create x and y coordinates for 1x1 xy-plane centered at origin
-            x = np.linspace(-plane_dimensions[0], plane_dimensions[0], 2001)
-            y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 1001)
-            # y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 1001)
-            x, y = np.meshgrid(x, y)
-
-            # Create the 3D plot
-            fig = plt.figure()
-            fig.suptitle(method_name)
-            ax = fig.add_subplot(111, projection='3d')
-            surface = ax.plot_surface(x, y, z_numpy, cmap='viridis')
-
-            # Labels and title
-            ax.set_xlabel('X')
-            ax.set_ylabel('Y')
-            ax.set_zlabel('Z')
-            ax.set_title('3D Surface Plot of Z')
-
-            # Function to update the plot at each frame
-            def update(frame):
-                ax.view_init(elev=20., azim=3.6*frame)
-                return surface,
-
-            # Create animation
-            ani = FuncAnimation(fig, update, frames=np.arange(0, 100), blit=False, repeat=False)
-
-            # To save the animation
-            ani.save(output_path / '3D_rotation.gif', writer='imagemagick')
-            plt.close(fig)
 
         self.train()
         return metrics_dict

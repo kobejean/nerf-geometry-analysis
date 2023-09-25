@@ -103,7 +103,6 @@ class PlaneGeometryDataManager(VanillaDataManager):  # pylint: disable=abstract-
         ray_bundle = RayBundle(
             origins=origins, directions=directions, pixel_area=pixel_area, camera_indices=camera_indices
         )
-        print(origins)
         return ray_bundle, {}
     
     def next_eval_image(self, step: int) -> Tuple[int, RayBundle, Dict]:
@@ -119,7 +118,6 @@ class PlaneGeometryDataManager(VanillaDataManager):  # pylint: disable=abstract-
         ray_bundle = RayBundle(
             origins=origins, directions=directions, pixel_area=pixel_area, camera_indices=camera_indices
         )
-        print(origins)
 
         for camera_ray_bundle, batch in self.eval_dataloader:
             assert camera_ray_bundle.camera_indices is not None

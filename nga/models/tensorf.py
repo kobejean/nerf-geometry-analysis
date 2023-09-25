@@ -280,11 +280,7 @@ class TensoRFModel(Model):
 
     def get_outputs(self, ray_bundle: RayBundle):
         # uniform sampling
-        ray_samples_uniform = self.sampler_uniform(
-            ray_bundle=ray_bundle,
-            near_plane=self.config.near_plane,
-            far_plane=self.config.far_plane,
-        )
+        ray_samples_uniform = self.sampler_uniform(ray_bundle)
         dens = self.field.get_density(ray_samples_uniform)
         weights = ray_samples_uniform.get_weights(dens)
         coarse_accumulation = self.renderer_accumulation(weights)
