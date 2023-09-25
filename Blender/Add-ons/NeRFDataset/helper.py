@@ -391,10 +391,16 @@ def create_line_camera_points(scene):
         point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
         rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
+        direction = mathutils.Vector(scene.sphere_location) - point
+        rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         # add point
         point_prop = scene.test_points.add()
         point_prop.vector = point
+
+        # add rotation
+        rotation_prop = scene.test_rotations.add()
+        rotation_prop.from_mathutils_matrix(rot_matrix)
 
     for i in range(num_val):
         theta = 2 * math.pi * (float(i % segments) / segments + 0.5 / num_train)
@@ -409,10 +415,16 @@ def create_line_camera_points(scene):
         point = scene.sphere_radius * mathutils.Vector(scene.sphere_scale) * unit
         rotation = mathutils.Euler(scene.sphere_rotation).to_matrix()
         point = mathutils.Vector(scene.sphere_location) + rotation @ point
+        direction = mathutils.Vector(scene.sphere_location) - point
+        rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         # add point
         point_prop = scene.val_points.add()
         point_prop.vector = point
+
+        # add rotation
+        rotation_prop = scene.test_rotations.add()
+        rotation_prop.from_mathutils_matrix(rot_matrix)
 
     start_x = -scene.sphere_radius
     fixed_z = 1.5
@@ -424,10 +436,16 @@ def create_line_camera_points(scene):
         z = fixed_z  
 
         point = mathutils.Vector((x, y, z))
+        direction = mathutils.Vector(scene.sphere_location) - point
+        rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         # add point
         point_prop = scene.train_points.add()
         point_prop.vector = point
+
+        # add rotation
+        rotation_prop = scene.test_rotations.add()
+        rotation_prop.from_mathutils_matrix(rot_matrix)
 ## property poll and update functions
 
 # camera pointer property poll function
