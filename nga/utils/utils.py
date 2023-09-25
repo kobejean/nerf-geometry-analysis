@@ -54,19 +54,22 @@ def plane_eval_ray_bundle(dataparser_outputs, sampling_width, dimensions=(1.0,1.
     return ray_bundle
 
 
-def sphere_eval_ray_bundle(dataparser_outputs, sampling_width, radius=3, n = 2001, m = 1001):
+def sphere_eval_ray_bundle(dataparser_outputs, sampling_width, radius=0.5, n = 1001, m = 2001):
     dataparser_scale = dataparser_outputs.dataparser_scale
-    theta = torch.linspace(-np.pi, np.pi, n)
-    phi = torch.linspace(0, np.pi, m)
+    phi = torch.linspace(0, np.pi, n)
+    theta = torch.linspace(-np.pi, np.pi, m)
     
-    grid_theta, grid_phi = torch.meshgrid(theta, phi)
+    grid_phi, grid_theta = torch.meshgrid(phi, theta)
     r = radius + sampling_width
     x = r * torch.cos(grid_theta) * torch.sin(grid_phi)
     y = r * torch.sin(grid_theta) * torch.sin(grid_phi)
     z = r * torch.cos(grid_phi)
     origins = torch.stack([x, y, z], dim=-1)
+    print("origins", origins)
     origins = convert_to_transformed_space(origins, dataparser_outputs)
     directions = -normalize(origins, dim=-1)
+    print("directions", directions)
+    print("origins", origins)
     pixel_area = (dataparser_outputs.dataparser_scale ** 2) * torch.ones((n, m, 1)) / (n * m)
     nears = torch.zeros((n, m, 1))
     fars = torch.ones((n, m, 1)) * 2 * sampling_width * dataparser_outputs.dataparser_scale

@@ -217,7 +217,12 @@ class NGPModel(Model):
             "num_samples_per_ray": packed_info[:, 1],
         }
         if not self.training:
-            outputs["weight_hist"], outputs["weight_hist_edges"] = get_weight_hist(weights, ray_samples, ray_indices, num_rays, accumulation)
+            print("near far", self.config.near_plane, self.config.far_plane)
+            outputs["weight_hist"], outputs["weight_hist_edges"] = get_weight_hist(
+                weights, ray_samples, 
+                range=(self.config.near_plane, self.config.far_plane),
+                ray_indices=ray_indices, num_rays=num_rays, accumulation=accumulation
+            )
         return outputs
 
     def get_metrics_dict(self, outputs, batch):

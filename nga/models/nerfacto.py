@@ -312,7 +312,10 @@ class NerfactoModel(Model):
             outputs["weights_list"] = weights_list
             outputs["ray_samples_list"] = ray_samples_list
         else:
-            outputs["weight_hist"], outputs["weight_hist_edges"] = get_weight_hist(weights, ray_samples)
+            outputs["weight_hist"], outputs["weight_hist_edges"] = get_weight_hist(
+                weights, ray_samples, 
+                range=(self.config.near_plane, self.config.far_plane),
+            )
 
 
         if self.training and self.config.predict_normals:
