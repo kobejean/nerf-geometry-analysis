@@ -140,7 +140,10 @@ class MipNerfModel(Model):
             "depth_fine": depth_fine,
         }
         if not self.training:
-            outputs["weight_hist"], outputs["weight_hist_edges"] = get_weight_hist(weights, ray_samples)
+            outputs["weight_hist"], outputs["weight_hist_edges"] = get_weight_hist(
+                weights, ray_samples, 
+                range=(self.config.near_plane, self.config.far_plane),
+            )
         return outputs
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None):
