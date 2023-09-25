@@ -17,7 +17,8 @@ from torch.cuda.amp.grad_scaler import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from nga.utils.utils import (
-    load_config, plane_eval_ray_bundle, save_as_image, read_depth_map, compute_errors,
+    load_config, plane_eval_ray_bundle, sphere_eval_ray_bundle, 
+    save_as_image, read_depth_map, compute_errors,
     load_metadata
 )
 # from nga.template_datamanager import TemplateDataManagerConfig
@@ -218,7 +219,11 @@ class NGAPipeline(VanillaPipeline):
         sampling_width = 0.5
         plane_dimensions=(1.0,1.0)
         camera_ray_bundle = plane_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, dimensions=plane_dimensions).to(self.device)
+        # camera_ray_bundle = sphere_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, radius=3).to(self.device)
         outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
+
+        self.model.near_plane = 0
+        self.model.far_plane = 2*sampling_width*self.datamanager.train_dataparser_outputs.dataparser_scale
 
         rgb = outputs["rgb"]
         rgb = torch.concat([rgb, outputs["accumulation"]], dim=-1)
@@ -252,6 +257,7 @@ class NGAPipeline(VanillaPipeline):
 
             # Create x and y coordinates for 1x1 xy-plane centered at origin
             x = np.linspace(-0.5*plane_dimensions[0], 0.5*plane_dimensions[0], 1001)
+            # y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 2001)
             y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 1001)
             x, y = np.meshgrid(x, y)
 

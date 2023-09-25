@@ -31,6 +31,7 @@ from nerfstudio.field_components.field_heads import FieldHeadNames
 from nerfstudio.fields.vanilla_nerf_field import NeRFField
 from nerfstudio.model_components.losses import MSELoss
 from nerfstudio.model_components.ray_samplers import PDFSampler, UniformSampler
+from nerfstudio.model_components.scene_colliders import NearFarCollider
 from nerfstudio.model_components.renderers import (
     AccumulationRenderer,
     DepthRenderer,

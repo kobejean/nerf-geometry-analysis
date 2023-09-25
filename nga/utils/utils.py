@@ -11,6 +11,7 @@ from pathlib import Path
 import yaml
 import json
 import torch
+from torch.nn.functional import normalize
 import numpy as np
 import OpenEXR, Imath
 
@@ -43,6 +44,33 @@ def plane_eval_ray_bundle(dataparser_outputs, sampling_width, dimensions=(1.0,1.
     nears = torch.zeros((n, n, 1))
     fars = torch.ones((n, n, 1)) * 2 * sampling_width * dataparser_outputs.dataparser_scale
     camera_indices = torch.zeros((n, n, 1))
+
+    ray_bundle = RayBundle(
+        origins=origins, directions=directions, pixel_area=pixel_area,
+        camera_indices=camera_indices,
+        nears=nears,
+        fars=fars, 
+    )
+    return ray_bundle
+
+
+def sphere_eval_ray_bundle(dataparser_outputs, sampling_width, radius=3, n = 2001, m = 1001):
+    dataparser_scale = dataparser_outputs.dataparser_scale
+    theta = torch.linspace(-np.pi, np.pi, n)
+    phi = torch.linspace(0, np.pi, m)
+    
+    grid_theta, grid_phi = torch.meshgrid(theta, phi)
+    r = radius + sampling_width
+    x = r * torch.cos(grid_theta) * torch.sin(grid_phi)
+    y = r * torch.sin(grid_theta) * torch.sin(grid_phi)
+    z = r * torch.cos(grid_phi)
+    origins = torch.stack([x, y, z], dim=-1)
+    origins = convert_to_transformed_space(origins, dataparser_outputs)
+    directions = -normalize(origins, dim=-1)
+    pixel_area = (dataparser_outputs.dataparser_scale ** 2) * torch.ones((n, m, 1)) / (n * m)
+    nears = torch.zeros((n, m, 1))
+    fars = torch.ones((n, m, 1)) * 2 * sampling_width * dataparser_outputs.dataparser_scale
+    camera_indices = torch.zeros((n, m, 1))
 
     ray_bundle = RayBundle(
         origins=origins, directions=directions, pixel_area=pixel_area,
