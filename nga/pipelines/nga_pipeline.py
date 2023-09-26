@@ -96,7 +96,7 @@ class NGAPipeline(VanillaPipeline):
 
         depth_filenames = self.datamanager.eval_dataset.metadata["depth_filenames"]
         method_name = self.model.__class__.__name__
-        geometry_analysis_type = self.train_dataparser_outputs.metadata.geometry_analysis_type
+        geometry_analysis_type = self.datamanager.train_dataparser_outputs.metadata["geometry_analysis_type"]
 
         if geometry_analysis_type != "unspcified" and geometry_analysis_type != None: 
             sampling_width = 0.5
