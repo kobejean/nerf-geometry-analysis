@@ -8,10 +8,12 @@ dependencies = ["nerfstudio >= 0.3.4"]
 [tool.setuptools.packages.find]
 include = ["nga*"]
 
-# register the entry point of your new method here:
 [project.entry-points.'nerfstudio.method_configs']
 nga-nerfacto = 'nga.method_configs:nga_nerfacto' 
 nga-instant_ngp = 'nga.method_configs:nga_instant_ngp' 
 nga-mipnerf = 'nga.method_configs:nga_mipnerf' 
 nga-vanilla_nerf = 'nga.method_configs:nga_vanilla_nerf' 
 nga-tensorf = 'nga.method_configs:nga_tensorf' 
+
+[project.entry-points.'nerfstudio.dataparser_configs']
+nga-data = 'nga.dataparser_configs:nga_dataparser'

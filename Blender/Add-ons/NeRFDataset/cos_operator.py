@@ -75,6 +75,7 @@ class CameraOnSphere(blender_nerf_operator.NeRFDataset_Operator):
         sphere_camera = scene.objects.get(CAMERA_NAME, camera)
         sphere_output_data = self.get_camera_intrinsics(scene, sphere_camera)
         sphere_output_data['frames'] = []
+        sphere_output_data['geometry_analysis_type'] = scene.geometry_analysis_type
         scene.camera = sphere_camera
     
         if scene.test_data:

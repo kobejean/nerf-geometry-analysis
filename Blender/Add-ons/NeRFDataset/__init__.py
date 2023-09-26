@@ -88,6 +88,16 @@ PROPS = [
         description="Choose the camera layout mode",
         default="sphere"
     )),
+    ('geometry_analysis_type', bpy.props.EnumProperty(
+        items=[
+            ("sphere", "Sphere", "Allows for spherical geometry evaluation"),
+            ("plane", "Plane", "Allows for planar geometry evaluation"),
+            ("unspecified", "Unspecified", "No specialized geometric evaluation"),
+        ],
+        name="Geometry Type",
+        description="Choose the geometry type",
+        default="unspecified"
+    )),
     ('sphere_location', bpy.props.FloatVectorProperty(name='Location', description='Center position of the training sphere', unit='LENGTH', update=helper.properties_ui_upd) ),
     ('sphere_rotation', bpy.props.FloatVectorProperty(name='Rotation', description='Rotation of the training sphere', unit='ROTATION', update=helper.properties_ui_upd) ),
     ('sphere_scale', bpy.props.FloatVectorProperty(name='Scale', description='Scale of the training sphere in xyz axes', default=(1.0, 1.0, 1.0), update=helper.properties_ui_upd) ),
