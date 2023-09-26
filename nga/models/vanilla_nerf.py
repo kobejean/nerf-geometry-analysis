@@ -42,7 +42,6 @@ from nerfstudio.model_components.renderers import (
     RGBRenderer,
 )
 from nga.models.base_model import Model, ModelConfig
-from nga.utils.hist import get_weight_hist
 from nerfstudio.utils import colormaps, misc
 
 
@@ -192,10 +191,13 @@ class NeRFModel(Model):
         outputs = {
             "rgb_coarse": rgb_coarse,
             "rgb_fine": rgb_fine,
+            "rgb": rgb_fine,
             "accumulation_coarse": accumulation_coarse,
             "accumulation_fine": accumulation_fine,
+            "accumulation": accumulation_fine,
             "depth_coarse": depth_coarse,
             "depth_fine": depth_fine,
+            "depth": depth_fine,
         }
         if not self.training:
             outputs["weight_hist"], outputs["weight_hist_edges"] = get_weight_hist(

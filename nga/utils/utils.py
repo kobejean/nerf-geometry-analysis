@@ -67,7 +67,7 @@ def sphere_eval_ray_bundle(dataparser_outputs, sampling_width, radius=0.5, n = 1
     origins = torch.stack([x, y, z], dim=-1)
     origins = convert_to_transformed_space(origins, dataparser_outputs)
     directions = -normalize(origins, dim=-1)
-    pixel_area = (dataparser_outputs.dataparser_scale ** 2) * torch.ones((n, m, 1)) / (n * m)
+    pixel_area = (dataparser_outputs.dataparser_scale ** 2) * torch.ones((n, m, 1)) / (n * n)
     nears = torch.zeros((n, m, 1))
     fars = torch.ones((n, m, 1)) * 2 * sampling_width * dataparser_outputs.dataparser_scale
     camera_indices = torch.zeros((n, m, 1))

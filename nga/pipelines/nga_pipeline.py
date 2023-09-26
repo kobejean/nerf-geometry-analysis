@@ -108,18 +108,21 @@ class NGAPipeline(VanillaPipeline):
         camera_ray_bundle = sphere_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, radius=0.5).to(self.device)
         outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
 
+        if not "rgb" in outputs:
+            return metrics_dict
 
-        rgb = outputs["rgb"]
-        rgb = torch.concat([rgb, outputs["accumulation"]], dim=-1)
+        rgb = outputs["rgb"] if "rgb" in outputs else outputs["rgb_fine"]
+        acc = outputs["accumulation"] if "accumulation" in outputs else outputs["accumulation_fine"]
+        rgb = torch.concat([rgb, acc], dim=-1)
         depth = outputs["depth"] / self.datamanager.train_dataparser_outputs.dataparser_scale
         mask = depth < 2 * sampling_width
         # mask = torch.abs(depth - torch.mean(depth)) < 1 * torch.std(depth)
-        acc = colormaps.apply_colormap(outputs["accumulation"])
+        acc = colormaps.apply_colormap(acc)
         depth_vis = torch.clone(depth)
         depth_vis[torch.logical_not(mask)] = torch.min(depth[mask]) if depth[mask].numel() > 0 else 0
         depth_vis = colormaps.apply_depth_colormap(
             depth_vis,
-            accumulation=outputs["accumulation"],
+            accumulation=acc,
         )
         depth_vis = torch.concat([depth_vis, mask], dim=-1)
         z = (sampling_width - depth).squeeze()
@@ -231,21 +234,24 @@ class NGAPipeline(VanillaPipeline):
             outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
             metrics_dict, images_dict = self.model.get_image_metrics_and_images(outputs, batch)
 
+            if not "rgb" in outputs:
+                continue
             rgb_pred = outputs["rgb"].cpu()
+            acc = outputs["accumulation"] if "accumulation" in outputs else outputs["accumulation_fine"]
 
             rgb_pred_loss, rgb_gt_loss = self.model.renderer_rgb.blend_background_for_loss_computation(
                 pred_image=outputs["rgb"],
-                pred_accumulation=outputs["accumulation"],
+                pred_accumulation=acc,
                 gt_image=batch["image"],
             )
             rgb_pred_loss, rgb_gt_loss = rgb_pred_loss.cpu(), rgb_gt_loss.cpu()
             rgb_pred = torch.concat([rgb_pred, torch.ones((rgb_pred.shape[0], rgb_pred.shape[1], 1))], dim=-1)
-            # rgb_pred = torch.concat([rgb_pred, 1 - outputs["accumulation"].cpu()], dim=-1)
+            # rgb_pred = torch.concat([rgb_pred, 1 - acc.cpu()], dim=-1)
             rgb_gt = batch["image"].cpu()
             
             rgb_compare = torch.concat([rgb_gt, rgb_pred], dim=1)
             rgb_compare_loss = torch.concat([rgb_gt_loss, rgb_pred_loss], dim=1)
-            acc = outputs["accumulation"]
+            acc = acc
             acc_vis = colormaps.apply_colormap(acc)
 
             depth_pred = outputs["depth"] / self.datamanager.train_dataparser_outputs.dataparser_scale
