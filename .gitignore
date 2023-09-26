@@ -1,5 +1,6 @@
 backup/
 outputs/
+renders/
 *.blend1
 Blender/checkerboard
 __pycache__

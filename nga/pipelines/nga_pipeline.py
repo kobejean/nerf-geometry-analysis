@@ -100,7 +100,7 @@ class NGAPipeline(VanillaPipeline):
 
         if geometry_analysis_type != "unspcified" and geometry_analysis_type != None: 
             sampling_width = 0.5
-            plane_dimensions=(1.0,1.0)
+            plane_dimensions=(5,10)
 
             orig_near = self.model.config.near_plane
             orig_far = self.model.config.far_plane
@@ -153,7 +153,7 @@ class NGAPipeline(VanillaPipeline):
                 np.save(output_path / "z.npy", z_numpy)
 
                 # Create x and y coordinates for 1x1 xy-plane centered at origin
-                x = np.linspace(-plane_dimensions[0], plane_dimensions[0], 2001)
+                x = np.linspace(-plane_dimensions[0], plane_dimensions[0], 1001)
                 y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 1001)
                 # y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 1001)
                 x, y = np.meshgrid(x, y)
