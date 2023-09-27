@@ -278,7 +278,8 @@ class NGADataparser(NerfStudioDataParser):
             metadata={
                 "depth_filenames": depth_filenames if len(depth_filenames) > 0 else None,
                 "depth_unit_scale_factor": self.config.depth_unit_scale_factor,
-                "geometry_analysis_type": meta["geometry_analysis_type"] if "geometry_analysis_type" in meta else "unspecified"
+                "geometry_analysis_type": meta.get("geometry_analysis_type", "unspecified"),
+                "geometry_analysis_dimensions": meta.get("geometry_analysis_dimensions", {}),
             },
         )
         return dataparser_outputs

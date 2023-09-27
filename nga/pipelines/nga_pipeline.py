@@ -158,7 +158,9 @@ class NGAPipeline(VanillaPipeline):
             self.model.config.far_plane = 2*sampling_width*self.datamanager.train_dataparser_outputs.dataparser_scale
             
             if geometry_analysis_type == "plane":
+                print(geometry_analysis_dimensions)
                 plane_dimensions = geometry_analysis_dimensions.get("size", [1,1])
+                print(plane_dimensions)
                 camera_ray_bundle = plane_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, dimensions=plane_dimensions).to(self.device)
             elif geometry_analysis_type == "sphere":
                 plane_dimensions = (1,1)
