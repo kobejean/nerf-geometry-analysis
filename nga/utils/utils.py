@@ -5,6 +5,7 @@
 from nerfstudio.cameras.rays import RayBundle
 from nerfstudio.utils.io import load_from_json
 from nerfstudio.utils import colormaps, colors, misc
+from nga.utils.spacial import convert_to_transformed_space
 
 from PIL import Image
 from pathlib import Path
@@ -22,13 +23,6 @@ def load_config(config_path):
     # config.print_to_terminal()
     return config
 
-def convert_to_transformed_space(x, dataparser_outputs):
-    scale = dataparser_outputs.dataparser_scale
-    transform = dataparser_outputs.dataparser_transform
-    x = torch.matmul(x, transform[:,0:3].transpose(0,1))
-    x += transform[:,3]
-    x *= scale
-    return x
 
 def plane_eval_ray_bundle(dataparser_outputs, sampling_width, dimensions=(1.0,1.0), n = 1001):
     dataparser_scale = dataparser_outputs.dataparser_scale

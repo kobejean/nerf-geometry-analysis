@@ -6,6 +6,8 @@ from matplotlib.animation import FuncAnimation
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib import cm
 import typing
 import torch
 from dataclasses import dataclass, field
@@ -21,6 +23,7 @@ from nga.utils.utils import (
     save_as_image, read_depth_map, compute_errors,
     load_metadata
 )
+from nga.utils.spacial import convert_from_transformed_space
 # from nga.template_datamanager import TemplateDataManagerConfig
 # from nga.template_model import TemplateModel, TemplateModelConfig
 from nerfstudio.data.datamanagers.base_datamanager import (
@@ -33,7 +36,6 @@ from nerfstudio.pipelines.base_pipeline import (
     VanillaPipelineConfig,
 )
 from nerfstudio.utils import colormaps
-
 
 @dataclass
 class NGAPipelineConfig(VanillaPipelineConfig):
@@ -96,11 +98,59 @@ class NGAPipeline(VanillaPipeline):
 
         depth_filenames = self.datamanager.eval_dataset.metadata["depth_filenames"]
         method_name = self.model.__class__.__name__
-        geometry_analysis_type = self.datamanager.train_dataparser_outputs.metadata["geometry_analysis_type"]
+        geometry_analysis_type = self.datamanager.train_dataparser_outputs.metadata.get("geometry_analysis_type", "unspecified")
+        geometry_analysis_dimensions = self.datamanager.train_dataparser_outputs.metadata.get("geometry_analysis_dimensions", {}) 
 
-        if geometry_analysis_type != "unspcified" and geometry_analysis_type != None: 
+
+        def save_depth_vis(file_path, depth_gt, depth_pred, depth_diff, mask):
+            # Convert torch tensors to numpy arrays and apply mask
+            depth_gt_np = depth_gt.to("cpu").numpy()
+            depth_pred_np = depth_pred.to("cpu").numpy()
+            depth_diff_np = depth_diff.to("cpu").numpy()
+
+            mask_np = mask.to("cpu").numpy()
+
+            depth_gt_masked = np.ma.masked_where(mask_np == 0, depth_gt_np)
+            depth_pred_masked = depth_pred_np
+            depth_diff_masked = np.ma.masked_where(mask_np == 0, depth_diff_np)
+            # Find min and max depth values for a unified color scale
+            vmin = min(np.min(depth_gt_masked), np.min(depth_pred_masked))
+            vmax = max(np.max(depth_gt_masked), np.max(depth_pred_masked))
+
+            # Create the subplots
+            fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+            fig.suptitle(method_name)
+
+            # Plot the heatmaps
+            cax1 = axs[0].imshow(depth_gt_masked, cmap='viridis', vmin=vmin, vmax=vmax)
+            axs[0].set_title('depth_gt')
+            fig.colorbar(cax1, ax=axs[0])
+
+            cax2 = axs[1].imshow(depth_pred_masked, cmap='viridis', vmin=vmin, vmax=vmax)
+            axs[1].set_title('depth_pred')
+            fig.colorbar(cax2, ax=axs[1])
+
+            eps = 1e-5
+            vmin, vmax = min(depth_diff_masked.min(),-eps), max(depth_diff_masked.max(), eps)
+            vcenter = 0
+
+            cax3 = axs[2].imshow(depth_diff_masked, cmap='coolwarm', norm=mpl.colors.TwoSlopeNorm(vcenter, vmin, vmax))
+
+            # max_abs = np.abs(depth_diff_masked).max()
+            # vmin, vmax = -max_abs, max_abs
+            # cax3 = axs[2].imshow(depth_diff_masked, cmap='coolwarm', vmin=vmin, vmax=vmax)
+
+            axs[2].set_title('depth_diff')
+            fig.colorbar(cax3, ax=axs[2])
+
+            fig.savefig(file_path)
+            plt.close(fig)
+
+
+
+
+        if geometry_analysis_type != "unspecified" and geometry_analysis_type != None: 
             sampling_width = 0.5
-            plane_dimensions=(5,10)
 
             orig_near = self.model.config.near_plane
             orig_far = self.model.config.far_plane
@@ -108,9 +158,12 @@ class NGAPipeline(VanillaPipeline):
             self.model.config.far_plane = 2*sampling_width*self.datamanager.train_dataparser_outputs.dataparser_scale
             
             if geometry_analysis_type == "plane":
+                plane_dimensions = geometry_analysis_dimensions.get("size", [1,1])
                 camera_ray_bundle = plane_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, dimensions=plane_dimensions).to(self.device)
             elif geometry_analysis_type == "sphere":
-                camera_ray_bundle = sphere_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, radius=0.5).to(self.device)
+                plane_dimensions = (1,1)
+                sphere_radius = geometry_analysis_dimensions.get("radius", 0.5)
+                camera_ray_bundle = sphere_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, radius=sphere_radius).to(self.device)
             else:
                 raise Exception(f"unknown geometry_analysis_type: {geometry_analysis_type}")
             outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
@@ -134,7 +187,9 @@ class NGAPipeline(VanillaPipeline):
                 accumulation=acc,
             )
             depth_vis = torch.concat([depth_vis, mask], dim=-1)
-            z = (sampling_width - depth).squeeze()
+            z = (sampling_width - depth)
+            depth_diff = -z
+            depth_gt = torch.ones_like(depth)*sampling_width
 
             metrics_dict["max_surface_diff"] = float(torch.max(z))
             metrics_dict["min_surface_diff"] = float(torch.min(z))
@@ -147,23 +202,35 @@ class NGAPipeline(VanillaPipeline):
                 save_as_image(depth_vis, output_path / "depth.png")
                 # save_weight_distribution_plot(output_path / f"weight_hist.png", outputs, [0, 2 * sampling_width], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = False)
                 save_weight_distribution_plot(output_path / f"weight_cfd.png", outputs, [0, 2 * sampling_width], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = True)
-
+                save_depth_vis(output_path / "depth_plot.png", depth_gt, depth, depth_diff, mask)
 
                 # Convert PyTorch tensor to NumPy array
-                z_numpy = z.cpu().numpy()
+                z_numpy = z.squeeze().cpu().numpy()
                 np.save(output_path / "z.npy", z_numpy)
 
-                # Create x and y coordinates for 1x1 xy-plane centered at origin
-                x = np.linspace(-plane_dimensions[0], plane_dimensions[0], 1001)
-                y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 1001)
-                # y = np.linspace(-0.5*plane_dimensions[1], 0.5*plane_dimensions[1], 1001)
-                x, y = np.meshgrid(x, y)
+                origins = camera_ray_bundle.origins.cpu()
+                directions = camera_ray_bundle.directions.cpu()
+                surface = origins + directions * outputs["depth"].cpu()
+                surface = convert_from_transformed_space(surface, self.datamanager.train_dataparser_outputs)
 
                 # Create the 3D plot
                 fig = plt.figure()
                 fig.suptitle(method_name)
                 ax = fig.add_subplot(111, projection='3d')
-                surface = ax.plot_surface(x, y, z_numpy, cmap='viridis')
+
+                # Setting the TwoSlopeNorm
+                eps = 1e-5
+                vmin, vmax = min(z_numpy.min(), -eps), max(z_numpy.max(), eps)
+                vcenter = 0
+                norm = mpl.colors.TwoSlopeNorm(vcenter=vcenter, vmin=vmin, vmax=vmax)
+                surface = ax.plot_surface(surface[:,:,0], surface[:,:,1], surface[:,:,2], rstride=10, cstride=10, linewidth=0, facecolors=plt.cm.coolwarm(norm(z_numpy)))
+
+                # mappable = plt.cm.ScalarMappable(norm=plt.Normalize(z_numpy.min(), z_numpy.max()), cmap=plt.cm.jet)
+                # mappable.set_array(z_numpy)
+                # plt.colorbar(mappable, ax=ax)
+
+
+                # surface = ax.plot_surface(surface[:,:,0], surface[:,:,1], surface[:,:,2], rstride=10, cstride=10, cmap='viridis')
 
                 # Labels and title
                 ax.set_xlabel('X')
@@ -184,42 +251,6 @@ class NGAPipeline(VanillaPipeline):
                 plt.close(fig)
 
 
-        def save_depth_vis(file_path, depth_gt, depth_pred, depth_diff, mask):
-            # Convert torch tensors to numpy arrays and apply mask
-            depth_gt_np = depth_gt.to("cpu").numpy()
-            depth_pred_np = depth_pred.to("cpu").numpy()
-            depth_diff_np = depth_diff.to("cpu").numpy()
-
-            mask_np = mask.to("cpu").numpy()
-
-            depth_gt_masked = np.ma.masked_where(mask_np == 0, depth_gt_np)
-            depth_pred_masked = depth_pred_np
-            depth_diff_masked = np.ma.masked_where(mask_np == 0, depth_diff_np)
-            # Find min and max depth values for a unified color scale
-            vmin = np.min(depth_gt_masked) # min(np.min(depth_gt_masked), np.min(depth_pred_masked))
-            vmax = np.max(depth_gt_masked) # max(np.max(depth_gt_masked), np.max(depth_pred_masked))
-
-            # Create the subplots
-            fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-            fig.suptitle(method_name)
-
-            # Plot the heatmaps
-            cax1 = axs[0].imshow(depth_gt_masked, cmap='viridis', vmin=vmin, vmax=vmax)
-            axs[0].set_title('depth_gt')
-            fig.colorbar(cax1, ax=axs[0])
-
-            cax2 = axs[1].imshow(depth_pred_masked, cmap='viridis', vmin=vmin, vmax=vmax)
-            axs[1].set_title('depth_pred')
-            fig.colorbar(cax2, ax=axs[1])
-
-            cax3 = axs[2].imshow(depth_diff_masked, cmap='coolwarm')
-            axs[2].set_title('depth_diff')
-            fig.colorbar(cax3, ax=axs[2])
-
-            fig.savefig(file_path)
-            plt.close(fig)
-
-
         num_images = len(self.datamanager.fixed_indices_eval_dataloader)
         depth_silog = np.zeros(num_images, np.float32)
         depth_log10 = np.zeros(num_images, np.float32)
@@ -236,8 +267,8 @@ class NGAPipeline(VanillaPipeline):
             image_idx = batch["image_idx"]
             depth_filepath = depth_filenames[image_idx]
             depth_gt = read_depth_map(str(depth_filepath), self.device)
-            mask = depth_gt <= 1000
-            depth_gt[depth_gt > 1000] = torch.min(depth_gt[mask])
+            mask = depth_gt <= 2 / self.datamanager.train_dataparser_outputs.dataparser_scale
+            depth_gt[torch.logical_not(mask)] = torch.min(depth_gt[mask])
             outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
             _metrics_dict, images_dict = self.model.get_image_metrics_and_images(outputs, batch)
             metrics_dict = { **metrics_dict, **_metrics_dict }

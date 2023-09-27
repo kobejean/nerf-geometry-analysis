@@ -20,6 +20,8 @@ class COS_UI(bpy.types.Panel):
         layout.use_property_split = True
         layout.prop(scene, 'camera_layout_mode')
         layout.prop(scene, 'geometry_analysis_type')
+        layout.prop(scene, 'geometry_size')
+        layout.prop(scene, 'geometry_radius')
         layout.prop(scene, 'camera')
         layout.prop(scene, 'sphere_location')
         layout.prop(scene, 'sphere_rotation')
