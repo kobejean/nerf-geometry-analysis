@@ -136,10 +136,11 @@ class NGAPipeline(VanillaPipeline):
             depth_vis = torch.concat([depth_vis, mask], dim=-1)
             z = (sampling_width - depth).squeeze()
 
-            metrics_dict["max_z"] = float(torch.max(z)),
-            metrics_dict["min_z"] = float(torch.min(z)),
-            metrics_dict["std_z"] = float(torch.std(z)),
-            metrics_dict["mean_z"] = float(torch.mean(z)),
+            metrics_dict["max_surface_diff"] = float(torch.max(z))
+            metrics_dict["min_surface_diff"] = float(torch.min(z))
+            metrics_dict["std_surface_diff"] = float(torch.std(z))
+            metrics_dict["mean_surface_diff"] = float(torch.mean(z))
+
             if output_path is not None:
                 save_as_image(rgb, output_path / "rgb.png")
                 save_as_image(acc, output_path / "acc.png")
@@ -238,8 +239,8 @@ class NGAPipeline(VanillaPipeline):
             mask = depth_gt <= 1000
             depth_gt[depth_gt > 1000] = torch.min(depth_gt[mask])
             outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
-            metrics_dict, images_dict = self.model.get_image_metrics_and_images(outputs, batch)
-
+            _metrics_dict, images_dict = self.model.get_image_metrics_and_images(outputs, batch)
+            metrics_dict = { **metrics_dict, **_metrics_dict }
             if not "rgb" in outputs:
                 continue
             rgb_pred = outputs["rgb"].cpu()
