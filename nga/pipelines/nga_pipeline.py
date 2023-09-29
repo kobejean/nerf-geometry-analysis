@@ -10,19 +10,22 @@ import matplotlib as mpl
 from matplotlib import cm
 import typing
 import torch
+import glob
 from dataclasses import dataclass, field
 from typing import Literal, Optional, Type
 from pathlib import Path
+import subprocess
 
 import torch.distributed as dist
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from nga.utils.utils import (
-    load_config, plane_eval_ray_bundle, sphere_eval_ray_bundle, 
+    load_config,
     save_as_image, read_depth_map, compute_errors,
     load_metadata
 )
+from nga.utils.raybundle import contour_eval_ray_bundle, plane_eval_ray_bundle, sphere_eval_ray_bundle
 from nga.utils.spacial import convert_from_transformed_space
 # from nga.template_datamanager import TemplateDataManagerConfig
 # from nga.template_model import TemplateModel, TemplateModelConfig
@@ -146,6 +149,33 @@ class NGAPipeline(VanillaPipeline):
             fig.savefig(file_path)
             plt.close(fig)
 
+        slice_count = 20
+
+        if output_path is not None:
+            for i in range(slice_count):
+                orig_near = self.model.config.near_plane
+                orig_far = self.model.config.far_plane
+                self.model.config.near_plane = 0
+                self.model.config.far_plane = self.datamanager.train_dataparser_outputs.dataparser_scale / (slice_count * 2)
+            
+                dimensions = geometry_analysis_dimensions.get("size", [1,1,1])
+                camera_ray_bundle = contour_eval_ray_bundle(self.datamanager.train_dataparser_outputs, i, slice_count, dimensions).to(self.device)
+                outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
+
+                self.model.config.near_plane = orig_near
+                self.model.config.far_plane = orig_far
+                
+                rgb = outputs["rgb"] if "rgb" in outputs else outputs["rgb_fine"]
+                acc = outputs["accumulation"] if "accumulation" in outputs else outputs["accumulation_fine"]
+                rgb = torch.concat([rgb, acc], dim=-1)
+
+                save_as_image(rgb, output_path / f"contour_rgb_{i:04d}.png")
+                #save_weight_distribution_plot(output_path / f"contour_weight_cfd_{i:04d}.png", outputs, [0, 1 / (slice_count * 2)], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = True)
+            # image_files = glob.glob(output_path / "contour_rgb_*.png")
+            # image_files.sort()
+            # cmd= ["convert", "-delay", "100", "-loop", "0", "-background", "black", "-alpha", "remove", "-alpha", "off", *image_files, output_path / "contour_rgb.gif"]
+            # print(*cmd)
+            # subprocess.run(cmd, shell=False, cwd=output_path)
 
 
 
@@ -159,7 +189,7 @@ class NGAPipeline(VanillaPipeline):
             
             if geometry_analysis_type == "plane":
                 print(geometry_analysis_dimensions)
-                plane_dimensions = geometry_analysis_dimensions.get("size", [1,1])
+                plane_dimensions = geometry_analysis_dimensions.get("size", [1,1,1])
                 print(plane_dimensions)
                 camera_ray_bundle = plane_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, dimensions=plane_dimensions).to(self.device)
             elif geometry_analysis_type == "sphere":
@@ -225,11 +255,11 @@ class NGAPipeline(VanillaPipeline):
                 vmin, vmax = min(z_numpy.min(), -eps), max(z_numpy.max(), eps)
                 vcenter = 0
                 norm = mpl.colors.TwoSlopeNorm(vcenter=vcenter, vmin=vmin, vmax=vmax)
-                surface = ax.plot_surface(surface[:,:,0], surface[:,:,1], surface[:,:,2], rstride=10, cstride=10, linewidth=0, facecolors=plt.cm.coolwarm(norm(z_numpy)))
+                surface = ax.plot_surface(surface[:,:,0], surface[:,:,1], surface[:,:,2], rstride=5, cstride=5, linewidth=0, edgecolor='none', facecolors=plt.cm.coolwarm(norm(z_numpy)))
 
-                # mappable = plt.cm.ScalarMappable(norm=plt.Normalize(z_numpy.min(), z_numpy.max()), cmap=plt.cm.jet)
-                # mappable.set_array(z_numpy)
-                # plt.colorbar(mappable, ax=ax)
+                mappable = plt.cm.ScalarMappable(norm=norm, cmap=plt.cm.coolwarm)
+                mappable.set_array(z_numpy)
+                plt.colorbar(mappable, ax=ax)
 
 
                 # surface = ax.plot_surface(surface[:,:,0], surface[:,:,1], surface[:,:,2], rstride=10, cstride=10, cmap='viridis')

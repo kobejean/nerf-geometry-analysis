@@ -42,6 +42,7 @@ from nerfstudio.model_components.renderers import (
     RGBRenderer,
 )
 from nga.models.base_model import Model, ModelConfig
+from nga.utils.hist import get_weight_hist
 from nerfstudio.utils import colormaps, misc
 
 
