@@ -25,7 +25,7 @@ from nga.utils.utils import (
     save_as_image, read_depth_map, compute_errors,
     load_metadata
 )
-from nga.utils.raybundle import contour_eval_ray_bundle, plane_eval_ray_bundle, sphere_eval_ray_bundle
+from nga.utils.raybundle import contour_eval_ray_bundle, plane_eval_ray_bundle, sphere_eval_ray_bundle, cube_eval_ray_bundle
 from nga.utils.spacial import convert_from_transformed_space
 # from nga.template_datamanager import TemplateDataManagerConfig
 # from nga.template_model import TemplateModel, TemplateModelConfig
@@ -151,7 +151,7 @@ class NGAPipeline(VanillaPipeline):
 
         slice_count = 20
 
-        if output_path is not None:
+        if output_path is not None and False:
             for i in range(slice_count):
                 orig_near = self.model.config.near_plane
                 orig_far = self.model.config.far_plane
@@ -180,22 +180,27 @@ class NGAPipeline(VanillaPipeline):
 
 
         if geometry_analysis_type != "unspecified" and geometry_analysis_type != None: 
-            sampling_width = 0.5
+            sampling_depth = 0.5
+            max_depth = 2*sampling_depth
 
             orig_near = self.model.config.near_plane
             orig_far = self.model.config.far_plane
             self.model.config.near_plane = 0
-            self.model.config.far_plane = 2*sampling_width*self.datamanager.train_dataparser_outputs.dataparser_scale
+            self.model.config.far_plane = max_depth*self.datamanager.train_dataparser_outputs.dataparser_scale
             
             if geometry_analysis_type == "plane":
-                print(geometry_analysis_dimensions)
                 plane_dimensions = geometry_analysis_dimensions.get("size", [1,1,1])
-                print(plane_dimensions)
-                camera_ray_bundle = plane_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, dimensions=plane_dimensions).to(self.device)
+                camera_ray_bundle = plane_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_depth, dimensions=plane_dimensions).to(self.device)
             elif geometry_analysis_type == "sphere":
                 plane_dimensions = (1,1)
                 sphere_radius = geometry_analysis_dimensions.get("radius", 0.5)
-                camera_ray_bundle = sphere_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_width, radius=sphere_radius).to(self.device)
+                camera_ray_bundle = sphere_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_depth, radius=sphere_radius).to(self.device)
+            elif geometry_analysis_type == "cube":
+                plane_dimensions = geometry_analysis_dimensions.get("size", [1,1,1])
+                max_dim = max(plane_dimensions)
+                max_depth = 2*(2*sampling_depth + max_dim)
+                self.model.config.far_plane = max_depth*self.datamanager.train_dataparser_outputs.dataparser_scale
+                camera_ray_bundle = cube_eval_ray_bundle(self.datamanager.train_dataparser_outputs, sampling_depth, dimensions=plane_dimensions).to(self.device)
             else:
                 raise Exception(f"unknown geometry_analysis_type: {geometry_analysis_type}")
             outputs = self.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
@@ -209,7 +214,7 @@ class NGAPipeline(VanillaPipeline):
             acc = outputs["accumulation"] if "accumulation" in outputs else outputs["accumulation_fine"]
             rgb = torch.concat([rgb, acc], dim=-1)
             depth = outputs["depth"] / self.datamanager.train_dataparser_outputs.dataparser_scale
-            mask = depth < 2 * sampling_width
+            mask = depth <= max_depth
             # mask = torch.abs(depth - torch.mean(depth)) < 1 * torch.std(depth)
             acc = colormaps.apply_colormap(acc)
             depth_vis = torch.clone(depth)
@@ -219,9 +224,9 @@ class NGAPipeline(VanillaPipeline):
                 accumulation=acc,
             )
             depth_vis = torch.concat([depth_vis, mask], dim=-1)
-            z = (sampling_width - depth)
+            z = (sampling_depth - depth)
             depth_diff = -z
-            depth_gt = torch.ones_like(depth)*sampling_width
+            depth_gt = torch.ones_like(depth)*sampling_depth
 
             metrics_dict["max_surface_diff"] = float(torch.max(z))
             metrics_dict["min_surface_diff"] = float(torch.min(z))
@@ -232,14 +237,15 @@ class NGAPipeline(VanillaPipeline):
                 save_as_image(rgb, output_path / "rgb.png")
                 save_as_image(acc, output_path / "acc.png")
                 save_as_image(depth_vis, output_path / "depth.png")
-                # save_weight_distribution_plot(output_path / f"weight_hist.png", outputs, [0, 2 * sampling_width], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = False)
-                save_weight_distribution_plot(output_path / f"weight_cfd.png", outputs, [0, 2 * sampling_width], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = True)
+                # save_weight_distribution_plot(output_path / f"weight_hist.png", outputs, [0, 2 * sampling_depth], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = False)
+                save_weight_distribution_plot(output_path / f"weight_cfd.png", outputs, [0, 2 * sampling_depth], self.datamanager.train_dataparser_outputs.dataparser_scale, plot_cdf = True)
                 save_depth_vis(output_path / "depth_plot.png", depth_gt, depth, depth_diff, mask)
 
                 # Convert PyTorch tensor to NumPy array
                 z_numpy = z.squeeze().cpu().numpy()
                 np.save(output_path / "z.npy", z_numpy)
 
+                '''
                 origins = camera_ray_bundle.origins.cpu()
                 directions = camera_ray_bundle.directions.cpu()
                 surface = origins + directions * outputs["depth"].cpu()
@@ -255,7 +261,7 @@ class NGAPipeline(VanillaPipeline):
                 vmin, vmax = min(z_numpy.min(), -eps), max(z_numpy.max(), eps)
                 vcenter = 0
                 norm = mpl.colors.TwoSlopeNorm(vcenter=vcenter, vmin=vmin, vmax=vmax)
-                surface = ax.plot_surface(surface[:,:,0], surface[:,:,1], surface[:,:,2], rstride=5, cstride=5, linewidth=0, edgecolor='none', facecolors=plt.cm.coolwarm(norm(z_numpy)))
+                surface = ax.plot_surface(surface[:,:,0], surface[:,:,1], surface[:,:,2], rstride=10, cstride=10, linewidth=0, edgecolor='none', antialiased=False, facecolors=plt.cm.coolwarm(norm(z_numpy)))
 
                 mappable = plt.cm.ScalarMappable(norm=norm, cmap=plt.cm.coolwarm)
                 mappable.set_array(z_numpy)
@@ -281,7 +287,7 @@ class NGAPipeline(VanillaPipeline):
                 # To save the animation
                 ani.save(output_path / '3D_rotation.gif', writer='imagemagick')
                 plt.close(fig)
-
+                '''
 
         num_images = len(self.datamanager.fixed_indices_eval_dataloader)
         depth_silog = np.zeros(num_images, np.float32)

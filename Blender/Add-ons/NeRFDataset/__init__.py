@@ -92,6 +92,7 @@ PROPS = [
         items=[
             ("sphere", "Sphere", "Allows for spherical geometry evaluation"),
             ("plane", "Plane", "Allows for planar geometry evaluation"),
+            ("cube", "Cube", "Allows for cube geometry evaluation"),
             ("unspecified", "Unspecified", "No specialized geometric evaluation"),
         ],
         name="Geometry Type",
@@ -106,7 +107,7 @@ PROPS = [
     ('sphere_radius', bpy.props.FloatProperty(name='Radius', description='Radius scale of the training sphere', default=3.0, soft_min=0.01, unit='LENGTH', update=helper.properties_ui_upd) ),
     ('focal', bpy.props.FloatProperty(name='Lens', description='Focal length of the training camera', default=50, soft_min=1, soft_max=5000, unit='CAMERA', update=helper.properties_ui_upd) ),
     ('seed', bpy.props.IntProperty(name='Seed', description='Random seed for sampling views on the training sphere', default=0) ),
-    ('cos_nb_train_frames', bpy.props.IntProperty(name='Train Frames', description='Number of training frames randomly sampled from the training sphere', default=80, soft_min=1) ),
+    ('cos_nb_train_frames', bpy.props.IntProperty(name='Train Frames', description='Number of training frames randomly sampled from the training sphere', default=100, soft_min=1) ),
     ('cos_nb_val_frames', bpy.props.IntProperty(name='Validation Frames', description='Number of validation frames randomly sampled from the training sphere', default=10, soft_min=1) ),
     ('cos_nb_test_frames', bpy.props.IntProperty(name='Test Frames', description='Number of training frames randomly sampled from the training sphere', default=10, soft_min=1) ),
     ('min_altitude', bpy.props.FloatProperty(name='Minimum Altitude', description='Minimum altitude angle', default=10, soft_min=-90, soft_max=90) ),
