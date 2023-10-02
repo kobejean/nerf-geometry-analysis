@@ -73,9 +73,8 @@ def create_sphere_camera_points(scene):
             rotation_prop.from_mathutils_matrix(rot_matrix)
 
 
-
 def golden_spiral_points(N, phi_range=(0, math.pi / 2)):
-    phi = math.pi * (3.0 - math.sqrt(5.0))
+    angle_increment = math.pi * (math.sqrt(5.0)-1)
     points = []
     max_z = math.cos(phi_range[0])
     min_z = math.cos(phi_range[1])
@@ -83,9 +82,9 @@ def golden_spiral_points(N, phi_range=(0, math.pi / 2)):
     
     for i in range(N):
         index = float(i)
-        z = max_z - (index / (N-1)) * z_spread  # z goes from 1 to 0
+        z = max_z - ((index+0.5) / N) * z_spread  # z goes from 1 to 0
         radius = math.sqrt(1 - z * z)
-        theta = phi * index
+        theta = angle_increment * index
         
         x = math.cos(theta) * radius
         y = math.sin(theta) * radius
