@@ -27,7 +27,7 @@ from torchmetrics.functional import structural_similarity_index_measure
 from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
-from nerfstudio.cameras.rays import RayBundle
+from nerfstudio.cameras.rays import RayBundle, RaySamples
 from nerfstudio.configs.config_utils import to_immutable_dict
 from nerfstudio.field_components.encodings import NeRFEncoding
 from nerfstudio.field_components.field_heads import FieldHeadNames
@@ -206,6 +206,11 @@ class NeRFModel(Model):
                 range=(self.config.near_plane, self.config.far_plane),
             )
         return outputs
+    
+    def get_densities(self, ray_samples: RaySamples) -> torch.Tensor:
+        assert self.field is not None
+        field_outputs = self.field_fine(ray_samples)
+        return field_outputs[FieldHeadNames.DENSITY]
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None) -> Dict[str, torch.Tensor]:
         # Scaling metrics by coefficients to create the losses.

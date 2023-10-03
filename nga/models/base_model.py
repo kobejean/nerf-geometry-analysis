@@ -27,7 +27,7 @@ import torch
 from torch import nn
 from torch.nn import Parameter
 
-from nerfstudio.cameras.rays import RayBundle
+from nerfstudio.cameras.rays import RayBundle, RaySamples
 from nerfstudio.configs.base_config import InstantiateConfig
 from nerfstudio.configs.config_utils import to_immutable_dict
 from nerfstudio.data.scene_box import SceneBox
@@ -85,3 +85,16 @@ class Model(_Model):
             else:
                 outputs[output_name] = torch.cat(outputs_list).view(image_height, image_width, -1)  # type: ignore
         return outputs
+
+
+    @abstractmethod
+    def get_densities(self, ray_samples: RaySamples) -> torch.Tensor:
+        """Takes in a Ray Bundle and returns a dictionary of outputs.
+
+        Args:
+            ray_bundle: Input bundle of rays. This raybundle should have all the
+            needed information to compute the outputs.
+
+        Returns:
+            Outputs of model. (ie. rendered colors)
+        """

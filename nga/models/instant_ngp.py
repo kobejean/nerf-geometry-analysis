@@ -28,7 +28,7 @@ from torchmetrics.functional import structural_similarity_index_measure
 from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 
-from nerfstudio.cameras.rays import RayBundle
+from nerfstudio.cameras.rays import RayBundle, RaySamples
 from nerfstudio.engine.callbacks import (
     TrainingCallback,
     TrainingCallbackAttributes,
@@ -223,6 +223,11 @@ class NGPModel(Model):
                 ray_indices=ray_indices, num_rays=num_rays, accumulation=accumulation
             )
         return outputs
+
+    def get_densities(self, ray_samples: RaySamples) -> torch.Tensor:
+        assert self.field is not None
+        field_outputs = self.field(ray_samples)
+        return field_outputs[FieldHeadNames.DENSITY]
 
     def get_metrics_dict(self, outputs, batch):
         image = batch["image"].to(self.device)

@@ -333,6 +333,11 @@ class NerfactoModel(Model):
             outputs[f"prop_depth_{i}"] = self.renderer_depth(weights=weights_list[i], ray_samples=ray_samples_list[i])
 
         return outputs
+    
+    def get_densities(self, ray_samples: RaySamples) -> torch.Tensor:
+        assert self.field is not None
+        field_outputs = self.field(ray_samples, compute_normals=self.config.predict_normals)
+        return field_outputs[FieldHeadNames.DENSITY]
 
     def get_metrics_dict(self, outputs, batch):
         metrics_dict = {}
