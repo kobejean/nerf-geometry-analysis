@@ -93,6 +93,7 @@ PROPS = [
             ("sphere", "Sphere", "Allows for spherical geometry evaluation"),
             ("plane", "Plane", "Allows for planar geometry evaluation"),
             ("cube", "Cube", "Allows for cube geometry evaluation"),
+            ("line", "Line", "Allows for line geometry evaluation"),
             ("unspecified", "Unspecified", "No specialized geometric evaluation"),
         ],
         name="Geometry Type",
