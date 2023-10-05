@@ -10,25 +10,30 @@ METHODS=("instant-ngp" "tensorf" "nerfacto")
 DATASETS=("pattern_plane1" "checkered_plane" "black_line_bg_white" "black_square_bg_white")
 DATASETS=("$DATASET_DIR/${DATASETS[@]}")
 
-# for METHOD in "${FAST_METHODS[@]}"; do
-#   for DATASET in "${DATASETS[@]}"; do
-#     echo "ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nga-data --data $DATASET"
-#     ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nga-data --data $DATASET
-#   done
-# done
+get_most_recent_dir() {
+  dir_path="$1"
+  most_recent=$(ls -td "${dir_path}"/* | head -n 1)
+  echo $most_recent
+}
 
-# for METHOD in "${SLOW_METHODS[@]}"; do
-#   DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1_720x480
-#   echo "ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nga-data --data $DATASET"
-#   ns-train $METHOD --vis "viewer" --viewer.quit-on-train-completion True --data $DATASET nga-data --data $DATASET
-# done
+eval () {
+    render_dir="$1/renders"
+    rm -rf $render_dir
+    bash eval.bash $1
+    convert -delay 100 -loop 0 -background red -alpha remove -alpha off "$render_dir"/rgb_compare_*.png "$render_dir"/rgb_compare.gif || true
+    convert -delay 100 -loop 0 -background red -alpha remove -alpha off "$render_dir"/depth_plot_*.png "$render_dir"/depth_plot.gif || true
+    convert -delay 10 -loop 0 -background white -alpha remove -alpha off "$render_dir"/line_contour_*.jpeg "$render_dir"/line_contour.gif || true
+    convert -delay 100 -loop 0 -background red -alpha remove -alpha off "$render_dir"/contour_rgb_*.png "$render_dir"/contour_rgb.gif || true
+}
+
+
 
 for METHOD in "${METHODS[@]}"; do
   # DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1
   echo "ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET"
   ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET
-done
 
-# for METHOD in "${METHODS[@]}"; do
-#   ns-train $METHOD --load-config configs/pattern_plane1_10-90deg/$METHOD/config.yml
-# done
+  dataset_name=$(basename "$DATASET")
+  output_dir=$(get_most_recent_dir "outputs/$dataset_name/nga-$METHOD")
+  eval $output_dir
+done

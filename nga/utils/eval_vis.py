@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from typing import Literal, Optional, Type
 from pathlib import Path
 import subprocess
+from nga.utils.spacial import convert_to_transformed_space
 
 import torch.distributed as dist
 from torch.cuda.amp.grad_scaler import GradScaler
@@ -34,12 +35,16 @@ from nerfstudio.data.datamanagers.base_datamanager import (
     DataManagerConfig,
 )
 from nga.models.base_model import ModelConfig
+from nerfstudio.cameras.rays import RayBundle, RaySamples
 from nerfstudio.pipelines.base_pipeline import (
     VanillaPipeline,
     VanillaPipelineConfig,
 )
 from nerfstudio.utils import colormaps
 from nerfstudio.model_components.ray_samplers import SpacedSampler
+
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 class NearFarSettings:
     def __init__(self, config, near, far):
@@ -78,9 +83,6 @@ def save_contour_renders(pipeline, output_path, slice_count):
 
             save_as_image(rgb, output_path / f"contour_rgb_{i:04d}.png")
 
-def save_contour_densities():
-    sampler = SpacedSampler(lambda x : x, lambda x : x)
-    
 
 def save_depth_vis(file_path, method_name, depth_gt, depth_pred, depth_diff, mask):
     # Convert torch tensors to numpy arrays and apply mask
@@ -165,13 +167,18 @@ def save_geometry_surface_eval(pipeline, output_path, padded=False):
             plane_dimensions = geometry_analysis_dimensions.get("size", [1,1,1])
             camera_ray_bundle = plane_eval_ray_bundle(pipeline.datamanager.train_dataparser_outputs, sampling_depth, dimensions=plane_dimensions, padded=padded).to(pipeline.device)
         elif geometry_analysis_type == "sphere":
-            if padded: return
+            if padded: return {}
             sphere_radius = geometry_analysis_dimensions.get("radius", 0.5)
             camera_ray_bundle = sphere_eval_ray_bundle(pipeline.datamanager.train_dataparser_outputs, sampling_depth, radius=sphere_radius).to(pipeline.device)
         elif geometry_analysis_type == "cube":
-            if padded: return
+            if padded: return {}
             dimensions = geometry_analysis_dimensions.get("size", [1,1,1])
             camera_ray_bundle = cube_eval_ray_bundle(pipeline.datamanager.train_dataparser_outputs, sampling_depth, dimensions=dimensions).to(pipeline.device)
+        elif geometry_analysis_type == "line":
+            if padded: return {}
+            dimensions = geometry_analysis_dimensions.get("size", [1,1,1])
+            line_metrics = line_eval(pipeline, output_path, dimensions=dimensions)
+            return line_metrics
         else:
             raise Exception(f"unknown geometry_analysis_type: {geometry_analysis_type}")
         outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
@@ -252,7 +259,14 @@ def save_geometry_surface_eval(pipeline, output_path, padded=False):
             # To save the animation
             ani.save(output_path / '3D_rotation.gif', writer='imagemagick')
             plt.close(fig)
-    return z
+
+    surface_diff = z
+    metrics_dict = {}
+    metrics_dict["max_surface_diff"] = float(torch.max(surface_diff).item())
+    metrics_dict["min_surface_diff"] = float(torch.min(surface_diff).item())
+    metrics_dict["std_surface_diff"] = float(torch.std(surface_diff).item())
+    metrics_dict["mean_surface_diff"] = float(torch.mean(surface_diff).item())
+    return metrics_dict
 
 def eval_set_renders_and_metrics(pipeline, output_path, get_std):
     depth_filenames = pipeline.datamanager.eval_dataset.metadata["depth_filenames"]
@@ -348,3 +362,154 @@ def eval_set_renders_and_metrics(pipeline, output_path, get_std):
     # metrics_dict["depth_d1"] = float(depth_d1.mean())
     # metrics_dict["depth_d2"] = float(depth_d2.mean())
     # metrics_dict["depth_d3"] = float(depth_d3.mean())
+
+def line_eval(pipeline, output_path, dimensions=(1.0,1.0,1.0), n = 100):
+    dataparser_outputs = pipeline.datamanager.train_dataparser_outputs
+    padding = 950
+    pad_scale = (n + 2*padding) / n
+    # n = int(n*pad_scale)
+
+    dataparser_scale = dataparser_outputs.dataparser_scale
+    dimensions = np.array(dimensions)
+    y = torch.linspace(-0.5*dimensions[1]*pad_scale, 0.5*dimensions[1]*pad_scale, n+1)
+    y = (y[1:] + y[:-1]) / 2
+    z = torch.full_like(y, 0.5*dimensions[2]*pad_scale)
+    near = 0
+    far = dimensions[2] * dataparser_outputs.dataparser_scale * pad_scale
+
+    # Initialize the UniformSampler
+    sampler = SpacedSampler(lambda x : x, lambda x : x, n, train_stratified=False)
+    xn = 100
+    line_pts = []
+    for i in range(xn):
+        x = ((i+0.5) / xn - 0.5)*dimensions[0]
+        x = torch.full_like(y, x)
+        origins=torch.stack([x, y, z], dim=-1)
+        directions=torch.zeros_like(origins)
+        directions[..., 2] = -1
+        origins_trans = convert_to_transformed_space(origins, dataparser_outputs)
+        directions_trans = convert_to_transformed_space(directions, dataparser_outputs, is_direction=True)
+        ray_bundle = RayBundle(
+            origins=origins_trans,
+            directions=directions_trans,
+            pixel_area=torch.full([n, 1], dimensions[1]*dimensions[2]/(n*n)),
+            nears=torch.full([n, 1], near),
+            fars=torch.full([n, 1], far),
+            camera_indices=torch.zeros([n, 1]),
+        )
+
+
+        # Generate samples
+        samples = sampler.generate_ray_samples(ray_bundle).to("cuda")
+
+        densities = pipeline.model.get_densities(samples)
+        # log_densities = torch.log1p(densities)
+        log_densities = np.log1p(densities.cpu().squeeze().detach().numpy())
+
+
+        depth = ((samples.frustums.starts + samples.frustums.ends) / 2).cpu() / dataparser_scale
+        pts = origins.view(n, 1, 3) + directions.view(n, 1, 3) * depth
+
+        lcs_percentage = np.pi * 0.05**2
+        lcs_percentile = 100-100*lcs_percentage
+        threshold = np.percentile(log_densities, lcs_percentile)
+        solid = log_densities >= threshold
+
+        solid_center = np.mean(pts[solid, :].numpy(), axis=0)
+        line_pts.append(solid_center)
+
+        if output_path is not None:
+            # Create a subplot layout
+            fig = make_subplots(rows=1, cols=2,
+                                subplot_titles=("Vertical Slice of Densities", "Solid Region"),
+                                horizontal_spacing=0.15,
+            )
+
+            # Add the first heatmap to subplot (1, 1)
+            trace1 = go.Heatmap(
+                z=log_densities.transpose(),
+                x=pts[:, 0, 1],
+                y=pts[0, :, 2],
+                colorscale='Viridis',
+                colorbar=dict(
+                    x=0.425,  # Position of colorbar for first subplot
+                    title=f"Log Density"
+                )
+            )
+            fig.add_trace(trace1, row=1, col=1)
+
+            # Add the second heatmap to subplot (1, 2)
+            trace2 = go.Heatmap(
+                z=np.array(solid, np.float32).transpose(),
+                x=pts[:, 0, 1],
+                y=pts[0, :, 2],
+                colorscale='Viridis',
+                colorbar=dict(
+                    x=1.0,  # Position of colorbar for second subplot
+                    title="Solid Region"
+                )
+            )
+            fig.add_trace(trace2, row=1, col=2)
+
+            # Add a scatter plot on top of the second heatmap
+            trace3 = go.Scatter(
+                x=[solid_center[1]],
+                y=[solid_center[2]],
+                mode='markers',
+                marker=dict(
+                    color='red',
+                    size=3
+                )
+            )
+            fig.add_trace(trace3, row=1, col=2)
+
+            # Update layout
+            fig.update_layout(
+                title=f"X = {pts[0,0,0]:.4f}",
+                xaxis_title="Y",
+                yaxis_title="Z",
+                xaxis2_title="Y",
+                yaxis2_title="Z",
+                width=800,
+                height=400,
+                hovermode=False,
+                showlegend=False,
+                margin=dict(l=20, r=20, t=50, b=20)
+            )
+
+            # Show figure
+            # fig.show()
+            fig.write_image(output_path / f"line_contour_{i:04d}.jpeg")
+    
+    line_pts = np.array(line_pts)
+    line_distance = np.linalg.norm(line_pts[:,1:], axis=-1)
+
+    if output_path is not None:
+        np.save(output_path / "line_pts.npy", line_pts)
+        fig = go.Figure(data=[go.Scatter3d(
+            x=line_pts[:,0],
+            y=line_pts[:,0],
+            z=line_pts[:,0],
+            mode='markers',
+            marker=dict(
+                size=3,
+                color='red',  # You can set color based on any coordinate or custom array
+                colorscale='Viridis',
+            )
+        )])
+
+        fig.update_layout(
+            title="Line Points",
+            scene=dict(
+                xaxis_title='X',
+                yaxis_title='Y',
+                zaxis_title='Z'
+            )
+        )
+        fig.write_image(output_path / f"line_plot.jpeg")
+    return {
+        "line_max": float(np.max(line_distance)),
+        "line_min": float(np.min(line_distance)),
+        "line_mean": float(np.mean(line_distance)),
+        "line_std": float(np.std(line_distance)),
+    }

@@ -1,6 +1,7 @@
 torchtyping==0.1.4
 matplotlib==3.5.3
 ipympl==0.9.3
+kaleido==0.2.1
 openexr @ git+https://github.com/jamesbowman/openexrpython@91ec8a81a0bad7b30170c66769464cc7ab44ce4b
 kplanes-nerfstudio @ git+https://github.com/kobejean/kplanes_nerfstudio
 nerfstudio @ git+https://github.com/nerfstudio-project/nerfstudio@b0e700137bd8bde21fbc7867f433dd36b2905e1e

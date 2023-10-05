@@ -43,7 +43,11 @@ from nerfstudio.field_components.encodings import (
 )
 from nerfstudio.field_components.field_heads import FieldHeadNames
 from nerfstudio.fields.tensorf_field import TensoRFField
-from nerfstudio.model_components.losses import MSELoss, tv_loss
+from nerfstudio.model_components.losses import (
+    MSELoss,
+    scale_gradients_by_distance_squared,
+    tv_loss,
+)
 from nerfstudio.model_components.ray_samplers import PDFSampler, UniformSampler
 from nerfstudio.model_components.scene_colliders import NearFarCollider
 from nerfstudio.model_components.renderers import (
@@ -97,6 +101,8 @@ class TensoRFModelConfig(ModelConfig):
     """Regularization method used in tensorf paper"""
     background_color: Literal["random", "last_sample", "black", "white"] = "white"
     """Whether to randomize the background color."""
+    use_gradient_scaling: bool = True
+    """Use gradient scaler where the gradients are lower for points closer to the camera."""
 
 
 class TensoRFModel(Model):
@@ -291,6 +297,8 @@ class TensoRFModel(Model):
         field_outputs_fine = self.field.forward(
             ray_samples_pdf, mask=acc_mask, bg_color=colors.WHITE.to(weights.device)
         )
+        if self.config.use_gradient_scaling:
+            field_outputs_fine = scale_gradients_by_distance_squared(field_outputs_fine, ray_samples_pdf)
 
         weights_fine = ray_samples_pdf.get_weights(field_outputs_fine[FieldHeadNames.DENSITY])
 
@@ -315,7 +323,7 @@ class TensoRFModel(Model):
     
     def get_densities(self, ray_samples: RaySamples) -> torch.Tensor:
         assert self.field is not None
-        field_outputs = self.field(ray_samples, compute_normals=self.config.predict_normals)
+        field_outputs = self.field(ray_samples)
         return field_outputs[FieldHeadNames.DENSITY]
 
     def get_loss_dict(self, outputs, batch, metrics_dict=None) -> Dict[str, torch.Tensor]:

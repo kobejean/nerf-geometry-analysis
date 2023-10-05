@@ -110,9 +110,10 @@ method_configs["nga-nerfacto"] = TrainerConfig(
         ),
         model=NerfactoModelConfig(
             eval_num_rays_per_chunk=1 << 15,
-            background_color="random",
+            background_color="last_sample",
             near_plane=near_plane,
             far_plane=far_plane,
+            disable_scene_contraction=True,
         ),
     ),
     optimizers={
@@ -170,7 +171,7 @@ method_configs["nga-mipnerf"] = TrainerConfig(
             num_coarse_samples=128,
             num_importance_samples=128,
             eval_num_rays_per_chunk=1024,
-            background_color="random",
+            background_color="last_sample",
             near_plane=near_plane,
             far_plane=far_plane,
         ),
@@ -191,7 +192,7 @@ method_configs["nga-vanilla-nerf"] = TrainerConfig(
         ),
         model=VanillaModelConfig(
             _target=NeRFModel,    
-            background_color="random",
+            background_color="last_sample",
             near_plane=near_plane,
             far_plane=far_plane,
         ),
@@ -222,7 +223,7 @@ method_configs["nga-tensorf"] = TrainerConfig(
         ),
         model=TensoRFModelConfig(
             regularization="tv",
-            background_color="random",
+            background_color="last_sample",
             near_plane=near_plane,
             far_plane=far_plane,
         ),
