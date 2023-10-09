@@ -16,6 +16,7 @@ from __future__ import annotations
 from nga.models.instant_ngp import InstantNGPModelConfig
 from nga.models.mipnerf import MipNerfModel
 from nga.models.nerfacto import NerfactoModelConfig
+from nga.models.jean import JeanModelConfig
 # from nga.models.neus import NeuSModelConfig
 # from nga.models.neus_facto import NeuSFactoModelConfig
 # from nga.models.semantic_nerfw import SemanticNerfWModelConfig
@@ -75,6 +76,7 @@ import math
 method_configs: Dict[str, TrainerConfig] = {}
 descriptions = {
     "nga-nerfacto": "Recommended real-time model tuned for real captures. This model will be continually updated.",
+    "nga-jean": "Hybrid of nerfacto and instant-ngp.",
     # "nga-depth-nerfacto": "Nerfacto with depth supervision.",
     "nga-instant-ngp": "Implementation of Instant-NGP. Recommended real-time model for unbounded scenes.",
     # "nga-instant-ngp-bounded": "Implementation of Instant-NGP. Recommended for bounded real and synthetic scenes",
@@ -129,6 +131,45 @@ method_configs["nga-nerfacto"] = TrainerConfig(
     viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
     vis="viewer",
 )
+method_configs["nga-jean"] = TrainerConfig(
+    method_name="nga-jean",
+    steps_per_eval_batch=500,
+    steps_per_save=2000,
+    max_num_iterations=30000,
+    mixed_precision=True,
+    pipeline=NGAPipelineConfig(
+        datamanager=VanillaDataManagerConfig(
+            dataparser=NGADataParserConfig(),
+            train_num_rays_per_batch=4096,
+            eval_num_rays_per_batch=4096,
+            camera_optimizer=CameraOptimizerConfig(
+                mode="SO3xR3",
+                optimizer=AdamOptimizerConfig(lr=6e-4, eps=1e-8, weight_decay=1e-2),
+                scheduler=ExponentialDecaySchedulerConfig(lr_final=6e-6, max_steps=200000),
+            ),
+        ),
+        model=JeanModelConfig(
+            eval_num_rays_per_chunk=1 << 15,
+            background_color="last_sample",
+            near_plane=near_plane,
+            far_plane=far_plane,
+            disable_scene_contraction=True,
+        ),
+    ),
+    optimizers={
+        "proposal_networks": {
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
+            "scheduler": ExponentialDecaySchedulerConfig(lr_final=0.0001, max_steps=200000),
+        },
+        "fields": {
+            "optimizer": AdamOptimizerConfig(lr=1e-2, eps=1e-15),
+            "scheduler": ExponentialDecaySchedulerConfig(lr_final=0.0001, max_steps=200000),
+        },
+    },
+    viewer=ViewerConfig(num_rays_per_chunk=1 << 15),
+    vis="viewer",
+)
+
 method_configs["nga-instant-ngp"] = TrainerConfig(
     method_name="nga-instant-ngp",
     steps_per_eval_batch=500,
@@ -249,6 +290,7 @@ def make_method_spec(name):
     )
 
 nga_nerfacto = make_method_spec("nga-nerfacto")
+nga_jean = make_method_spec("nga-jean")
 nga_instant_ngp = make_method_spec("nga-instant-ngp")
 nga_mipnerf = make_method_spec("nga-mipnerf")
 nga_vanilla_nerf = make_method_spec("nga-vanilla-nerf")
