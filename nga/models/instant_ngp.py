@@ -51,6 +51,7 @@ from nga.models.base_model import Model, ModelConfig
 from nga.utils.hist import get_weight_hist
 from nerfstudio.utils import colormaps, colors
 
+density_scale = 1
 
 @dataclass
 class InstantNGPModelConfig(ModelConfig):
@@ -88,7 +89,7 @@ class InstantNGPModelConfig(ModelConfig):
     """The color that is given to untrained areas."""
     disable_scene_contraction: bool = False
     """Whether to disable scene contraction or not."""
-    use_gradient_scaling: bool = True
+    use_gradient_scaling: bool = False
     """Use gradient scaler where the gradients are lower for points closer to the camera."""
 
 
@@ -138,7 +139,7 @@ class NGPModel(Model):
         # Sampler
         self.sampler = VolumetricSampler(
             occupancy_grid=self.occupancy_grid,
-            density_fn=self.field.density_fn,
+            density_fn=lambda *args: self.field.density_fn(*args) * density_scale,
         )
 
         # renderers
@@ -160,7 +161,7 @@ class NGPModel(Model):
         def update_occupancy_grid(step: int):
             self.occupancy_grid.update_every_n_steps(
                 step=step,
-                occ_eval_fn=lambda x: self.field.density_fn(x) * self.config.render_step_size,
+                occ_eval_fn=lambda x: density_scale * self.field.density_fn(x) * self.config.render_step_size,
             )
 
         return [
@@ -201,7 +202,7 @@ class NGPModel(Model):
         weights = nerfacc.render_weight_from_density(
             t_starts=ray_samples.frustums.starts[..., 0],
             t_ends=ray_samples.frustums.ends[..., 0],
-            sigmas=field_outputs[FieldHeadNames.DENSITY][..., 0],
+            sigmas=field_outputs[FieldHeadNames.DENSITY][..., 0] * density_scale,
             packed_info=packed_info,
         )[0]
         weights = weights[..., None]
@@ -234,7 +235,7 @@ class NGPModel(Model):
     def get_densities(self, ray_samples: RaySamples) -> torch.Tensor:
         assert self.field is not None
         field_outputs = self.field(ray_samples)
-        return field_outputs[FieldHeadNames.DENSITY]
+        return field_outputs[FieldHeadNames.DENSITY] * density_scale
 
     def get_metrics_dict(self, outputs, batch):
         image = batch["image"].to(self.device)

@@ -27,13 +27,15 @@ eval () {
 }
 
 
+FARS=(1 2 3 4 5 6 7 8)
 
-for METHOD in "${METHODS[@]}"; do
-  # DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1
-  echo "ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET"
-  ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET
+for FAR in "${FARS[@]}"; do
+  for METHOD in "${METHODS[@]}"; do
+    # DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1
+    ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET --pipeline.model.far_plane $FAR
 
-  dataset_name=$(basename "$DATASET")
-  output_dir=$(get_most_recent_dir "outputs/$dataset_name/nga-$METHOD")
-  eval $output_dir
+    dataset_name=$(basename "$DATASET")
+    output_dir=$(get_most_recent_dir "outputs/$dataset_name/nga-$METHOD")
+    eval $output_dir
+  done
 done

@@ -101,7 +101,7 @@ class TensoRFModelConfig(ModelConfig):
     """Regularization method used in tensorf paper"""
     background_color: Literal["random", "last_sample", "black", "white"] = "white"
     """Whether to randomize the background color."""
-    use_gradient_scaling: bool = True
+    use_gradient_scaling: bool = False
     """Use gradient scaler where the gradients are lower for points closer to the camera."""
 
 
