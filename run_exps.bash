@@ -27,15 +27,25 @@ eval () {
 }
 
 
-FARS=(1 2 3 4 5 6 7 8)
+# FARS=(1 2 3 4 5 6 7 8)
 
-for FAR in "${FARS[@]}"; do
-  for METHOD in "${METHODS[@]}"; do
-    # DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1
-    ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET --pipeline.model.far_plane $FAR
+# for FAR in "${FARS[@]}"; do
+#   for METHOD in "${METHODS[@]}"; do
+#     # DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1
+#     ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET --pipeline.model.far_plane $FAR
 
-    dataset_name=$(basename "$DATASET")
-    output_dir=$(get_most_recent_dir "outputs/$dataset_name/nga-$METHOD")
-    eval $output_dir
-  done
+#     dataset_name=$(basename "$DATASET")
+#     output_dir=$(get_most_recent_dir "outputs/$dataset_name/nga-$METHOD")
+#     eval $output_dir
+#   done
+# done
+
+
+for METHOD in "${METHODS[@]}"; do
+  # DATASET=~/Datasets/NeRF/nerf-geometry-analysis/pattern_plane1
+  ns-train nga-$METHOD --vis "tensorboard" --viewer.quit-on-train-completion True --data $DATASET 
+
+  dataset_name=$(basename "$DATASET")
+  output_dir=$(get_most_recent_dir "outputs/$dataset_name/nga-$METHOD")
+  eval $output_dir
 done
