@@ -9,10 +9,13 @@
 
 #bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r10mm_along_sphere_rainbow_sh
 # bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r5mm_along_sphere_rainbow_sh8
-bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r5mm_along_sphere_rainbow_sh_hsv_hi-freq_250
+# bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r5mm_sh_pat1
+# bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r2mm_sh_pat1
+# bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r1mm_sh_pat1
+bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r10mm_sh_pat2_250
 # bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r5mm_along_sphere_rainbow_sh_250
 # bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r5mm_along_sphere_rainbow_sh_500
-bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r5mm_along_sphere_rainbow_sh_hsv_250
+# bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r5mm_along_sphere_rainbow_sh_hsv_250
 #bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r1mm_along_sphere_rainbow_sh
 #bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r2mm_along_sphere_rainbow_sh
 # bash run_exps.bash ~/Datasets/NeRF/nerf-geometry-analysis/black_line_r5mm
