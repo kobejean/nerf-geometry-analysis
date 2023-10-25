@@ -305,7 +305,7 @@ def eval_set_renders_and_metrics(pipeline, output_path, get_std):
         depth_diff_vis = torch.concat([depth_diff_vis, mask], dim=-1)
 
         if output_path is not None:
-            # save_as_image(rgb_pred, output_path / f"rgb_pred_{image_idx:04d}.png")
+            save_as_image(rgb_pred, output_path / f"rgb_pred_{image_idx:04d}.png")
             # save_as_image(rgb_gt, output_path / f"rgb_gt_{image_idx:04d}.png")
             # save_as_image(rgb_pred_loss, output_path / f"rgb_pred_loss_{image_idx:04d}.png")
             # save_as_image(rgb_gt_loss, output_path / f"rgb_gt_loss_{image_idx:04d}.png")
