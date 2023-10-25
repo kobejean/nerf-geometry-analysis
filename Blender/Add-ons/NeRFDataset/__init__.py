@@ -78,7 +78,7 @@ PROPS = [
     ('camera_layout_mode', bpy.props.EnumProperty(
         items=[
             ("sphere", "Sphere", "Layout cameras in a spherical arrangement"),
-            ("hemisphere", "Hemisphere", "Layout cameras in a hemispherical arrangement"),
+            ("golden_spiral", "Golden Spiral Sphere", "Layout cameras in a hemispherical arrangement"),
             ("circle", "Circle", "Layout cameras in a circular arrangement"),
             ("stereo", "Stereo", "Layout cameras for stereo vision"),
             ("line", "Line", "Layout cameras along a line"),
@@ -106,7 +106,7 @@ PROPS = [
     ('sphere_rotation', bpy.props.FloatVectorProperty(name='Rotation', description='Rotation of the training sphere', unit='ROTATION', update=helper.properties_ui_upd) ),
     ('sphere_scale', bpy.props.FloatVectorProperty(name='Scale', description='Scale of the training sphere in xyz axes', default=(1.0, 1.0, 1.0), update=helper.properties_ui_upd) ),
     ('sphere_radius', bpy.props.FloatProperty(name='Radius', description='Radius scale of the training sphere', default=3.0, soft_min=0.01, unit='LENGTH', update=helper.properties_ui_upd) ),
-    ('focal', bpy.props.FloatProperty(name='Lens', description='Focal length of the training camera', default=50, soft_min=1, soft_max=5000, unit='CAMERA', update=helper.properties_ui_upd) ),
+    ('focal', bpy.props.FloatProperty(name='Lens', description='Focal length of the training camera', default=36, soft_min=1, soft_max=5000, unit='CAMERA', update=helper.properties_ui_upd) ),
     ('seed', bpy.props.IntProperty(name='Seed', description='Random seed for sampling views on the training sphere', default=0) ),
     ('cos_nb_train_frames', bpy.props.IntProperty(name='Train Frames', description='Number of training frames randomly sampled from the training sphere', default=100, soft_min=1) ),
     ('cos_nb_val_frames', bpy.props.IntProperty(name='Validation Frames', description='Number of validation frames randomly sampled from the training sphere', default=10, soft_min=1) ),

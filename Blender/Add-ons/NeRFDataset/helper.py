@@ -84,7 +84,7 @@ def golden_spiral_points(N, phi_range=(0, math.pi / 2)):
         index = float(i)
         z = max_z - ((index+0.5) / N) * z_spread  # z goes from 1 to 0
         radius = math.sqrt(1 - z * z)
-        theta = angle_increment * index
+        theta = angle_increment * (index+0.5)
         
         x = math.cos(theta) * radius
         y = math.sin(theta) * radius
@@ -94,7 +94,7 @@ def golden_spiral_points(N, phi_range=(0, math.pi / 2)):
 
 
 
-def create_hemisphere_camera_points(scene):
+def create_golden_spiral_camera_points(scene):
     num_test = scene.cos_nb_test_frames if scene.test_data else 0
     num_val = scene.cos_nb_val_frames if scene.val_data else 0
     num_train = scene.cos_nb_train_frames if scene.train_data else 0
@@ -425,9 +425,9 @@ def create_line_camera_points(scene):
         rotation_prop = scene.val_rotations.add()
         rotation_prop.from_mathutils_matrix(rot_matrix)
 
-    start_x = -scene.sphere_radius
+    start_x = -scene.sphere_radius-10
     fixed_z = 1.5
-    sampling_interval = 0.5
+    sampling_interval = (10) / (num_train)
 
     for i in range(num_train):
         x = start_x + i * sampling_interval 
@@ -435,7 +435,7 @@ def create_line_camera_points(scene):
         z = fixed_z  
 
         point = mathutils.Vector((x, y, z))
-        direction = mathutils.Vector(scene.sphere_location) - point
+        direction = mathutils.Vector((-start_x-sampling_interval*num_train/2,0,-fixed_z))
         rot_matrix = direction_vector_to_rotation_matrix(direction)
 
         # add point

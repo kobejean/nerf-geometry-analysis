@@ -89,18 +89,15 @@ class NGAPipeline(VanillaPipeline):
         geometry_analysis_type = self.datamanager.train_dataparser_outputs.metadata.get("geometry_analysis_type", "unspecified")
         geometry_analysis_dimensions = self.datamanager.train_dataparser_outputs.metadata.get("geometry_analysis_dimensions", {}) 
 
-        if output_path is not None:
-            save_contour_renders(self, output_path, slice_count=20)
 
         if geometry_analysis_type != "unspecified":
             save_geometry_surface_eval(self, output_path, padded=True)
             
-            surface_diff = save_geometry_surface_eval(self, output_path)
-            metrics_dict["max_surface_diff"] = float(torch.max(surface_diff).item())
-            metrics_dict["min_surface_diff"] = float(torch.min(surface_diff).item())
-            metrics_dict["std_surface_diff"] = float(torch.std(surface_diff).item())
-            metrics_dict["mean_surface_diff"] = float(torch.mean(surface_diff).item())
+            surface_metrics = save_geometry_surface_eval(self, output_path)
+            metrics_dict = { **metrics_dict, **surface_metrics }
 
+        # if output_path is not None:
+        #     save_contour_renders(self, output_path, slice_count=20)
             
         metrics_dict = { **metrics_dict , **eval_set_renders_and_metrics(self, output_path, get_std) }
         

@@ -10,6 +10,8 @@ include = ["nga*"]
 
 [project.entry-points.'nerfstudio.method_configs']
 nga-nerfacto = 'nga.method_configs:nga_nerfacto' 
+nga-yuto = 'nga.method_configs:nga_yuto' 
+nga-jean = 'nga.method_configs:nga_jean' 
 nga-instant_ngp = 'nga.method_configs:nga_instant_ngp' 
 nga-mipnerf = 'nga.method_configs:nga_mipnerf' 
 nga-vanilla_nerf = 'nga.method_configs:nga_vanilla_nerf' 
