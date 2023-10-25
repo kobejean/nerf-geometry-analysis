@@ -10,7 +10,7 @@ def convert_to_transformed_space(x, dataparser_outputs, is_direction=False):
         x += transform[:,3]
         x *= scale
     else:
-        x = normalize(x)
+        x = normalize(x, dim=-1)
     return x
 
 def convert_from_transformed_space(x, dataparser_outputs, is_direction=False):
@@ -22,5 +22,5 @@ def convert_from_transformed_space(x, dataparser_outputs, is_direction=False):
     R = torch.linalg.inv(transform[:,0:3])
     x = torch.matmul(x, R.transpose(0,1))
     if is_direction:
-        x = normalize(x)
+        x = normalize(x, dim=-1)
     return x

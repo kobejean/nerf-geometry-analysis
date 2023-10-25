@@ -199,8 +199,8 @@ def save_geometry_surface_eval(pipeline, output_path, padded=False):
         accumulation=acc,
     )
     depth_vis = torch.concat([depth_vis, mask], dim=-1)
-    z = (sampling_depth - depth)
-    depth_diff = -z
+    surface_diff = (sampling_depth - depth)
+    depth_diff = -surface_diff
     depth_gt = torch.full_like(depth, sampling_depth)
 
     if output_path is not None:
@@ -213,8 +213,8 @@ def save_geometry_surface_eval(pipeline, output_path, padded=False):
         save_depth_vis(output_path / (prefix + "depth_plot.png"), method_name, depth_gt, depth, depth_diff, mask)
 
         # Convert PyTorch tensor to NumPy array
-        z_numpy = z.squeeze().cpu().numpy()
-        np.save(output_path / (prefix + "z.npy"), z_numpy)
+        surface_diff_numpy = surface_diff.squeeze().cpu().numpy()
+        np.save(output_path / (prefix + "surface_diff.npy"), surface_diff_numpy)
 
         
         origins = camera_ray_bundle.origins.cpu()
@@ -230,13 +230,13 @@ def save_geometry_surface_eval(pipeline, output_path, padded=False):
         if not padded:
             # Setting the TwoSlopeNorm
             eps = 1e-5
-            vmin, vmax = min(z_numpy.min(), -eps), max(z_numpy.max(), eps)
+            vmin, vmax = min(surface_diff_numpy.min(), -eps), max(surface_diff_numpy.max(), eps)
             vcenter = 0
             norm = mpl.colors.TwoSlopeNorm(vcenter=vcenter, vmin=vmin, vmax=vmax)
-            surface = ax.plot_surface(surface[:,:,0], surface[:,:,1], surface[:,:,2], rstride=10, cstride=10, linewidth=0, edgecolor='none', antialiased=False, facecolors=plt.cm.coolwarm(norm(z_numpy)))
+            surface = ax.plot_surface(surface[:,:,0], surface[:,:,1], surface[:,:,2], rstride=10, cstride=10, linewidth=0, edgecolor='none', antialiased=False, facecolors=plt.cm.coolwarm(norm(surface_diff_numpy)))
 
             mappable = plt.cm.ScalarMappable(norm=norm, cmap=plt.cm.coolwarm)
-            mappable.set_array(z_numpy)
+            mappable.set_array(surface_diff_numpy)
             plt.colorbar(mappable, ax=ax)
 
 
@@ -260,7 +260,6 @@ def save_geometry_surface_eval(pipeline, output_path, padded=False):
             ani.save(output_path / '3D_rotation.gif', writer='imagemagick')
             plt.close(fig)
 
-    surface_diff = z
     metrics_dict = {}
     metrics_dict["max_surface_diff"] = float(torch.max(surface_diff).item())
     metrics_dict["min_surface_diff"] = float(torch.min(surface_diff).item())

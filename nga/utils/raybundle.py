@@ -28,7 +28,9 @@ def plane_eval_ray_bundle(dataparser_outputs, sampling_depth, dimensions=(1.0,1.
     directions = torch.zeros_like(origins)
     directions[:, :, 2] = -1.0
     origins = convert_to_transformed_space(origins, dataparser_outputs)
+    print("before", directions[0,0,:])
     directions = convert_to_transformed_space(directions, dataparser_outputs, is_direction=True)
+    print("after", directions[0,0,:])
     shape_1chan = (*origins.shape[:-1], 1)
     pixel_area = torch.ones(shape_1chan)
     nears = torch.zeros(shape_1chan)
